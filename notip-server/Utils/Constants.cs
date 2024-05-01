@@ -18,6 +18,6 @@ namespace notip_server.Utils
             public const string MISSED = "MISSED";
         }
 
-        public const string AVATAR_DEFAULT = "https://pnchatstorage.blob.core.windows.net/blobcontainer/no_image.jpg";
+        public const string AVATAR_DEFAULT = "images/no_image.jpg";
     }
 }

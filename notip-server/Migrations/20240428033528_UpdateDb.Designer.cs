@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using notip_server.Data;
 
@@ -11,9 +12,11 @@ using notip_server.Data;
 namespace notip_server.Migrations
 {
     [DbContext(typeof(DbChatContext))]
-    partial class DbChatContextModelSnapshot : ModelSnapshot
+    [Migration("20240428033528_UpdateDb")]
+    partial class UpdateDb
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -239,6 +242,7 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(32)");
 
                     b.Property<string>("Path")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
@@ -266,19 +270,23 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(32)");
 
                     b.Property<string>("Address")
+                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Avatar")
+                        .IsRequired()
                         .IsUnicode(false)
                         .HasColumnType("longtext");
 
                     b.Property<string>("CurrentSession")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .IsUnicode(false)
                         .HasColumnType("varchar(500)");
 
                     b.Property<string>("Dob")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .IsUnicode(false)
                         .HasColumnType("varchar(50)");
@@ -295,6 +303,7 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<string>("Gender")
+                        .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
 
@@ -314,9 +323,16 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Phone")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .IsUnicode(false)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(32)");
 
                     b.HasKey("Code");
 

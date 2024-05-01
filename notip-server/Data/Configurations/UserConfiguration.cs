@@ -38,9 +38,6 @@ namespace notip_server.Data.Configurations
             builder.Property(e => e.Phone)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            builder.Property(e => e.UserName)
-                .HasMaxLength(32)
-                .IsUnicode(false);
         }
     }
 }

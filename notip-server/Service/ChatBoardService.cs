@@ -82,6 +82,10 @@ namespace notip_server.Service
             return groups.OrderByDescending(x => x.LastActive).ToList();
         }
 
+        //public async Task<List<GroupDto>> SearchChatGroup(string keySearch)
+        //{
+
+        //}
 
         /// <summary>
         /// Thông tin nhóm chat
@@ -353,7 +357,7 @@ namespace notip_server.Service
             }
             catch (Exception ex)
             {
-                
+                //throw new Exception()
             }
         }
 

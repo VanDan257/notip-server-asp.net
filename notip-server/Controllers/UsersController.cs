@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.ViewModel.User;
 
 namespace notip_server.Controllers
 {
@@ -41,14 +42,14 @@ namespace notip_server.Controllers
 
         [Route("profile")]
         [HttpPut]
-        public async Task<IActionResult> UpdateProfile(UserDto user)
+        public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _userService.UpdateProfile(userSession, user);
+                responseAPI.Data = await _userService.UpdateProfile(userSession, request);
 
                 return Ok(responseAPI);
             }

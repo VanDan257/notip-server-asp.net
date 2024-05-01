@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using notip_server.Data;
 using notip_server.Extensions;
+using notip_server.Hubs;
 using notip_server.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,12 +21,13 @@ builder.Services.AddCors(options =>
         });
 });
 
-builder.Services.AddApplicationServices(builder.Configuration);
+builder.Services.AddApplicationServices()
+    .AddIdentityServices();
 
+builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddIdentityServices();
 
 #region EntityFramework Core
 builder.Services.AddDbContext<DbChatContext>(option =>
@@ -45,8 +47,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseRouting();
+app.UseCors(policy);
 app.UseAuthorization();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+    endpoints.MapHub<ChatHub>("/chatHub");
+});
 
 app.MapControllers();
 
