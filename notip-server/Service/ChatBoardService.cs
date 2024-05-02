@@ -7,22 +7,26 @@ using notip_server.Models;
 using notip_server.Interfaces;
 using notip_server.Utils;
 using System.Runtime.ExceptionServices;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Data;
 
 namespace notip_server.Service
 {
     public class ChatBoardService : IChatBoardService
     {
-        protected readonly DbChatContext chatContext;
-        protected readonly IWebHostEnvironment webHostEnvironment;
-        protected IHubContext<ChatHub> chatHub;
+        private readonly DbChatContext chatContext;
+        private readonly IWebHostEnvironment webHostEnvironment;
+        private IHubContext<ChatHub> chatHub;
+        private readonly IUserService _userService;
         //private readonly string _storageConnectionString;
         //private readonly string _storageContainerName;
 
-        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, IHubContext<ChatHub> chatHub, IConfiguration configuration)
+        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, IHubContext<ChatHub> chatHub, IConfiguration configuration, IUserService userService)
         {
             this.chatContext = chatContext;
             this.chatHub = chatHub;
             this.webHostEnvironment = webHostEnvironment;
+            _userService = userService;
             //_storageConnectionString = configuration.GetValue<string>("BlobConnectionString");
             //_storageContainerName = configuration.GetValue<string>("BlobContainerName");
         }
@@ -82,10 +86,131 @@ namespace notip_server.Service
             return groups.OrderByDescending(x => x.LastActive).ToList();
         }
 
-        //public async Task<List<GroupDto>> SearchChatGroup(string keySearch)
-        //{
+        /// <summary>
+        /// Tìm kiếm nhóm chat
+        /// </summary>
+        /// <param name="userCode">User hiện tại đang đăng nhập</param>
+        /// <param name="keySearch">Tên nhóm hoặc tên người dùng cần tìm</param>
+        /// <returns></returns>
+        public async Task<List<GroupDto>> SearchChatGroup(string userCode, string keySearch)
+        {
+            List<GroupDto> groups = await chatContext.Groups
+                    .Where(x => x.GroupUsers.Any(y => y.UserCode.Equals(userCode)) && x.Name.Contains(keySearch))
+                    .Select(x => new GroupDto()
+                    {
+                        Code = x.Code,
+                        Name = x.Name,
+                        Avatar = x.Avatar,
+                        Type = x.Type,
+                        LastActive = x.LastActive,
+                        Users = x.GroupUsers.Select(y => new UserDto()
+                        {
+                            Code = y.User.Code,
+                            FullName = y.User.FullName,
+                            Avatar = y.User.Avatar,
+                        }).ToList(),
+                    }).ToListAsync();
 
-        //}
+            List<UserDto> users = await _userService.SearchContact(userCode, keySearch);
+            if(users.Count > 0)
+            {
+                for(int i = 0; i < users.Count; i++)
+                {
+                    string groupCode = await chatContext.Groups
+                    .Where(x => x.Type.Equals(Constants.GroupType.SINGLE))
+                    .Where(x => x.GroupUsers.Any(y => y.UserCode.Equals(userCode) &&
+                                x.GroupUsers.Any(y => y.UserCode.Equals(users[i].Code))))
+                    .Select(x => x.Code)
+                    .FirstOrDefaultAsync();
+                    if (!string.IsNullOrEmpty(groupCode))
+                    {
+                        groups.Add(new GroupDto
+                        {
+                            Code = groupCode,
+                            Type = Constants.GroupType.SINGLE,
+                            Avatar = users[i].Avatar,
+                            Name = users[i].FullName,
+                        });
+                    }
+                    else
+                    {
+                        groups.Add(new GroupDto
+                        {
+                            Code = users[i].Code,
+                            Type = Constants.GroupType.SINGLE,
+                            Avatar = users[i].Avatar,
+                            Name = users[i].FullName,
+                        });
+                    }
+                }
+            }
+
+            return groups;
+        }
+
+        /// <summary>
+        /// - Nếu tồn tại group có code = groupCode sẽ truy cập group đó, 
+        /// - Nếu không sẽ tìm kiếm user có code = groupCode và tạo nhóm chat riêng tư
+        /// </summary>
+        /// <param name="userCode">User hiện tại đang đăng nhập</param>
+        /// <param name="groupCode">Code của group muốn truy cập</param>
+        /// <returns></returns>
+        public async Task<List<MessageDto>> AccessChatGroup(string userCode, string groupCode)
+        {
+            Group grp = await chatContext.Groups
+                .FirstOrDefaultAsync(x => x.Code == groupCode);
+
+            if(grp != null)
+            {
+                return await chatContext.Messages
+                    .Where(x => x.GroupCode.Equals(groupCode))
+                    .Where(x => x.Group.GroupUsers.Any(y => y.UserCode.Equals(userCode)))
+                    .OrderBy(x => x.Created)
+                    .Select(x => new MessageDto()
+                    {
+                        Created = x.Created,
+                        Content = x.Content,
+                        CreatedBy = x.CreatedBy,
+                        GroupCode = x.GroupCode,
+                        Id = x.Id,
+                        Path = x.Path,
+                        Type = x.Type,
+                        UserCreatedBy = new UserDto()
+                        {
+                            Avatar = x.UserCreatedBy.Avatar
+                        }
+                    }).ToListAsync();
+            }
+            else
+            {
+                Group newGroup = new Group
+                {
+                    Code = Guid.NewGuid().ToString("N"),
+                    Created = DateTime.Now,
+                    CreatedBy = userCode,
+                    Type = Constants.GroupType.SINGLE,
+                    LastActive = DateTime.Now
+                };
+
+                newGroup.GroupUsers = new List<GroupUser>();
+                newGroup.GroupUsers.Add(new GroupUser
+                {
+                    GroupCode = newGroup.Code,
+                    UserCode = groupCode
+                });
+
+                newGroup.GroupUsers.Add(new GroupUser
+                {
+                    GroupCode = newGroup.Code,
+                    UserCode = userCode
+                });
+
+                await chatContext.Groups.AddAsync(newGroup);
+                await chatContext.SaveChangesAsync();
+
+                return null;
+            }
+        }
 
         /// <summary>
         /// Thông tin nhóm chat

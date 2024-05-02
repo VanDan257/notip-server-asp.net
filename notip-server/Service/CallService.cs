@@ -13,8 +13,8 @@ namespace notip_server.Service
 {
     public class CallService : ICallService
     {
-        protected readonly DbChatContext chatContext;
-        protected readonly IWebHostEnvironment webHostEnvironment;
+        private readonly DbChatContext chatContext;
+        private readonly IWebHostEnvironment webHostEnvironment;
         private IHubContext<ChatHub> chatHub;
         private static readonly IDictionary<string, object> _configProperties = new Dictionary<string, object>()
         {

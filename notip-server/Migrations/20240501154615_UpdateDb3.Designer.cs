@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using notip_server.Data;
 
@@ -11,9 +12,11 @@ using notip_server.Data;
 namespace notip_server.Migrations
 {
     [DbContext(typeof(DbChatContext))]
-    partial class DbChatContextModelSnapshot : ModelSnapshot
+    [Migration("20240501154615_UpdateDb3")]
+    partial class UpdateDb3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

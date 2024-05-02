@@ -16,7 +16,7 @@ namespace notip_server.Service
 {
     public class AuthService : IAuthService
     {
-        protected readonly DbChatContext chatContext;
+        private readonly DbChatContext chatContext;
         protected readonly IPasswordService _passwordService;
 
         public AuthService(DbChatContext chatContext, IPasswordService passwordService)

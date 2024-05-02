@@ -1,6 +1,0 @@
-@notip_server_HostAddress = http://localhost:5008
-
-GET {{notip_server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

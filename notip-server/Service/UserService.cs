@@ -10,7 +10,7 @@ namespace notip_server.Service
 {
     public class UserService : IUserService
     {
-        protected readonly DbChatContext chatContext;
+        private readonly DbChatContext chatContext;
         //protected readonly IWebHostEnvironment webHostEnvironment;
         public UserService(DbChatContext chatContext)
         {

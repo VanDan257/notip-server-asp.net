@@ -39,6 +39,43 @@ namespace notip_server.Controllers
             }
         }
 
+        [Route("search-group")]
+        [HttpGet]
+        public async Task<IActionResult> SearchChatGroup(string keySearch)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                responseAPI.Data = await _chatBoardService.SearchChatGroup(userSession, keySearch);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+        
+        [Route("access-group")]
+        [HttpGet]
+        public async Task<IActionResult> AccessChatGroup(string groupCode)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                responseAPI.Data = await _chatBoardService.AccessChatGroup(userSession, groupCode);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
 
         [Route("get-info")]
         [HttpGet]
