@@ -118,6 +118,25 @@ namespace notip_server.Controllers
             }
         }
 
+        [Route("out-group")]
+        [HttpDelete]
+        public async Task<IActionResult> OutGroup(string groupCode)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+
+            try
+            {
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                await _chatBoardService.OutGroup(userSession, groupCode);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
 
         [Route("update-group-avatar")]
         [HttpPut]

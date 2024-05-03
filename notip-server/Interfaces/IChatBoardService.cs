@@ -9,6 +9,7 @@ namespace notip_server.Interfaces
         Task<List<MessageDto>> AccessChatGroup(string userCode, string groupCode);
         Task<object> GetInfo(string userSession, string groupCode, string contactCode);
         Task AddGroup(string userCode, GroupDto group);
+        Task OutGroup(string userSession, string groupCode);
         Task<GroupDto> UpdateGroupAvatar(GroupDto group);
         Task SendMessage(string userCode, string groupCode, MessageDto message);
         Task<List<MessageDto>> GetMessageByGroup(string userCode, string groupCode);

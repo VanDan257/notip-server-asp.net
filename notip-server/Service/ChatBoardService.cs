@@ -325,6 +325,24 @@ namespace notip_server.Service
             await chatContext.SaveChangesAsync();
         }
 
+        public async Task OutGroup(string userSession, string groupCode)
+        {
+            var grp = await chatContext.GroupUsers.FirstOrDefaultAsync(x => x.UserCode == userSession && x.GroupCode == groupCode);
+            if(grp == null)
+            {
+                throw new Exception("Nhóm chat không tồn tại");
+            }
+
+            try
+            {
+                chatContext.GroupUsers.Remove(grp);
+            }
+            catch
+            {
+                throw new Exception("Có lỗi xảy ra");
+            }
+        }
+
         /// <summary>
         /// Cập nhật ảnh đại diện của nhóm chat
         /// </summary>
@@ -339,15 +357,19 @@ namespace notip_server.Service
             {
                 if (group.Avatar.Contains("data:image/png;base64,"))
                 {
-                    //string pathAvatar = $"Resource/Avatar/{Guid.NewGuid().ToString("N")}";
-                    //string pathFile = Path.Combine(webHostEnvironment.ContentRootPath, pathAvatar);
-                    //DataHelpers.Base64ToImage(group.Avatar.Replace("data:image/png;base64,", ""), pathFile);
+                    string pathAvatar = $"Resource/Avatar/{Guid.NewGuid().ToString("N")}";
+                    string pathFile = Path.Combine(webHostEnvironment.ContentRootPath, pathAvatar);
+                    DataHelpers.Base64ToImage(group.Avatar.Replace("data:image/png;base64,", ""), pathFile);
 
-                    var fileName = Guid.NewGuid().ToString() + ".jpg";
-                    var data = group.Avatar.Replace("data:image/png;base64,", "");
-                    byte[] imageBytes = Convert.FromBase64String(data);
-                    string container = "blobcontainer";
-                    string blobconnect = "DefaultEndpointsProtocol=https;AccountName=pnchatstorage;AccountKey=kxdoY/j/U+Bg3MGLMzFavw40hz575PPP3sEFYzCuOJxjHrCUf9an0Of0WyOwfNNk1y+51U0HTGAG+AStitfbbQ==;EndpointSuffix=core.windows.net";
+                    //using (var stream = new FileStream(filePath, FileMode.Create))
+                    //{
+                    //    await file.CopyToAsync(stream);
+                    //}
+                    //var fileName = Guid.NewGuid().ToString() + ".jpg";
+                    //var data = group.Avatar.Replace("data:image/png;base64,", "");
+                    //byte[] imageBytes = Convert.FromBase64String(data);
+                    //string container = "blobcontainer";
+                    //string blobconnect = "DefaultEndpointsProtocol=https;AccountName=pnchatstorage;AccountKey=kxdoY/j/U+Bg3MGLMzFavw40hz575PPP3sEFYzCuOJxjHrCUf9an0Of0WyOwfNNk1y+51U0HTGAG+AStitfbbQ==;EndpointSuffix=core.windows.net";
 
                     //var blobClient = new BlobClient(blobconnect, container, fileName);
 
