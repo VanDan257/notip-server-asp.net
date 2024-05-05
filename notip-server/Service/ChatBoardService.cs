@@ -9,6 +9,7 @@ using notip_server.Utils;
 using System.Runtime.ExceptionServices;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
+using notip_server.ViewModel.ChatBoard;
 
 namespace notip_server.Service
 {
@@ -219,16 +220,21 @@ namespace notip_server.Service
         /// <param name="groupCode">Mã nhóm</param>
         /// <param name="contactCode">Người chat</param>
         /// <returns></returns>
-        public async Task<object> GetInfo(string userSession, string groupCode, string contactCode)
+        public async Task<object> GetInfo(string userSession, string groupCode)
         {
             //Lấy thông tin nhóm chat
             Group group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code.Equals(groupCode));
 
-            // nếu mã nhóm k tồn tại => thuộc loại chat 1-1 (Tự quy định) => Trả về thông tin người chat cùng
-            if (group == null)
+            if(group == null)
             {
+                throw new Exception("Không tồn tại nhóm chat");
+            }
+            // Nếu tồn tại nhóm chat + nhóm chat có type = SINGLE (Chat 1-1) => trả về thông tin người chat cùng
+            if (group.Type.Equals(Constants.GroupType.SINGLE))
+            {
+                string userCode = group.GroupUsers.FirstOrDefault(x => x.UserCode != userSession)?.UserCode;
                 return await chatContext.Users
-                        .Where(x => x.Code.Equals(contactCode))
+                        .Where(x => x.Code.Equals(userCode))
                         .OrderBy(x => x.FullName)
                         .Select(x => new
                         {
@@ -240,53 +246,29 @@ namespace notip_server.Service
                             Email = x.Email,
                             FullName = x.FullName,
                             Gender = x.Gender,
-                            Phone = x.Phone,
+                            Phone = x.Phone
                         })
-                        .FirstOrDefaultAsync();
+                         .FirstOrDefaultAsync();
             }
             else
             {
-                // Nếu tồn tại nhóm chat + nhóm chat có type = SINGLE (Chat 1-1) => trả về thông tin người chat cùng
-                if (group.Type.Equals(Constants.GroupType.SINGLE))
+                // Nếu tồn tại nhóm chat + nhóm chat nhiều người => trả về thông tin nhóm chat + thành viên trong nhóm
+                return new
                 {
-                    string userCode = group.GroupUsers.FirstOrDefault(x => x.UserCode != userSession)?.UserCode;
-                    return await chatContext.Users
-                            .Where(x => x.Code.Equals(userCode))
-                            .OrderBy(x => x.FullName)
-                            .Select(x => new
-                            {
-                                IsGroup = false,
-                                Code = x.Code,
-                                Address = x.Address,
-                                Avatar = x.Avatar,
-                                Dob = x.Dob,
-                                Email = x.Email,
-                                FullName = x.FullName,
-                                Gender = x.Gender,
-                                Phone = x.Phone
-                            })
-                             .FirstOrDefaultAsync();
-                }
-                else
-                {
-                    // Nếu tồn tại nhóm chat + nhóm chat nhiều người => trả về thông tin nhóm chat + thành viên trong nhóm
-                    return new
-                    {
-                        IsGroup = true,
-                        Code = group.Code,
-                        Avatar = group.Avatar,
-                        Name = group.Name,
-                        Type = group.Type,
-                        Users = group.GroupUsers
-                            .OrderBy(x => x.User.FullName)
-                            .Select(x => new UserDto()
-                            {
-                                Code = x.User.Code,
-                                FullName = x.User.FullName,
-                                Avatar = x.User.Avatar
-                            }).ToList()
-                    };
-                }
+                    IsGroup = true,
+                    Code = group.Code,
+                    Avatar = group.Avatar,
+                    Name = group.Name,
+                    Type = group.Type,
+                    Users = group.GroupUsers
+                        .OrderBy(x => x.User.FullName)
+                        .Select(x => new UserDto()
+                        {
+                            Code = x.User.Code,
+                            FullName = x.User.FullName,
+                            Avatar = x.User.Avatar
+                        }).ToList()
+                };
             }
         }
 
@@ -295,13 +277,13 @@ namespace notip_server.Service
         /// </summary>
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="group">Nhóm</param>
-        public async Task AddGroup(string userCode, GroupDto group)
+        public async Task AddGroup(string userCode, AddGroupRequest request)
         {
             DateTime dateNow = DateTime.Now;
             Group grp = new Group()
             {
                 Code = Guid.NewGuid().ToString("N"),
-                Name = group.Name,
+                Name = request.Name,
                 Created = dateNow,
                 CreatedBy = userCode,
                 Type = Constants.GroupType.MULTI,
@@ -309,7 +291,7 @@ namespace notip_server.Service
                 Avatar = Constants.AVATAR_DEFAULT
             };
 
-            List<GroupUser> groupUsers = group.Users.Select(x => new GroupUser()
+            List<GroupUser> groupUsers = request.Users.Select(x => new GroupUser()
             {
                 UserCode = x.Code
             }).ToList();
@@ -325,17 +307,60 @@ namespace notip_server.Service
             await chatContext.SaveChangesAsync();
         }
 
-        public async Task OutGroup(string userSession, string groupCode)
+        /// <summary>
+        /// Thêm thành viên vào nhóm
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task AddMembersToGroup(AddMembersToGroupRequest request)
         {
-            var grp = await chatContext.GroupUsers.FirstOrDefaultAsync(x => x.UserCode == userSession && x.GroupCode == groupCode);
-            if(grp == null)
-            {
-                throw new Exception("Nhóm chat không tồn tại");
-            }
-
             try
             {
-                chatContext.GroupUsers.Remove(grp);
+                var group = await chatContext.Groups.FindAsync(request.Code);
+
+                if(group == null)
+                {
+                    throw new Exception("Không tìm thấy nhóm");
+                }
+
+                List<GroupUser> lstGroupUser = new List<GroupUser>();
+                for(int i = 0; i < request.Users.Count; i++)
+                {
+                    lstGroupUser.Add(new GroupUser
+                    {
+                        GroupCode = request.Code,
+                        UserCode = request.Users[i].Code
+                    });
+                }
+
+                await chatContext.GroupUsers.AddRangeAsync(lstGroupUser);
+                await chatContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Rời nhóm
+        /// </summary>
+        /// <param name="userSession"></param>
+        /// <param name="groupCode"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task OutGroup(string userSession, string groupCode)
+        {
+            try
+            {
+                var groupUser = await chatContext.GroupUsers.FirstOrDefaultAsync(x => x.UserCode == userSession && x.GroupCode == groupCode);
+                if(groupUser == null)
+                {
+                    throw new Exception("Nhóm chat không tồn tại");
+                }
+
+                chatContext.GroupUsers.Remove(groupUser);
+                await chatContext.SaveChangesAsync();
             }
             catch
             {
@@ -344,46 +369,69 @@ namespace notip_server.Service
         }
 
         /// <summary>
+        /// Cập nhật tên nhóm
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task UpdateGroupName(UpdateGroupNameRequest request)
+        {
+            try
+            {
+                Group grp = await chatContext.Groups
+                    .FirstOrDefaultAsync(x => x.Code == request.Code);
+                if( grp == null)
+                {
+                    throw new Exception("Không tìm thấy nhóm chat");
+                }
+
+                grp.Name = request.Name;
+                chatContext.Groups.Update(grp);
+
+                await chatContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra: " + ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Cập nhật ảnh đại diện của nhóm chat
         /// </summary>
         /// <param name="group">Nhóm</param>
         /// <returns></returns>
-        public async Task<GroupDto> UpdateGroupAvatar(GroupDto group)
+        public async Task UpdateGroupAvatar(UpdateGroupAvatarRequest request)
         {
-            Group grp = await chatContext.Groups
-                .FirstOrDefaultAsync(x => x.Code == group.Code);
-
-            if (grp != null)
+            try
             {
-                if (group.Avatar.Contains("data:image/png;base64,"))
+                Group grp = await chatContext.Groups
+                    .FirstOrDefaultAsync(x => x.Code == request.Code);
+
+                if (grp != null)
                 {
-                    string pathAvatar = $"Resource/Avatar/{Guid.NewGuid().ToString("N")}";
-                    string pathFile = Path.Combine(webHostEnvironment.ContentRootPath, pathAvatar);
-                    DataHelpers.Base64ToImage(group.Avatar.Replace("data:image/png;base64,", ""), pathFile);
+                    string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/images/groups/");
+                    FileHelper.CreateDirectory(path);
+                    string pathFile = path + request.Image[0].FileName;
+                    if (!File.Exists(pathFile))
+                    {
 
-                    //using (var stream = new FileStream(filePath, FileMode.Create))
-                    //{
-                    //    await file.CopyToAsync(stream);
-                    //}
-                    //var fileName = Guid.NewGuid().ToString() + ".jpg";
-                    //var data = group.Avatar.Replace("data:image/png;base64,", "");
-                    //byte[] imageBytes = Convert.FromBase64String(data);
-                    //string container = "blobcontainer";
-                    //string blobconnect = "DefaultEndpointsProtocol=https;AccountName=pnchatstorage;AccountKey=kxdoY/j/U+Bg3MGLMzFavw40hz575PPP3sEFYzCuOJxjHrCUf9an0Of0WyOwfNNk1y+51U0HTGAG+AStitfbbQ==;EndpointSuffix=core.windows.net";
+                        using (var stream = new FileStream(pathFile, FileMode.Create))
+                        {
+                            await request.Image[0].CopyToAsync(stream);
+                            //await UploadBlobFile(message.Attachments[0]);
+                        }
+                    }
+                    grp.Avatar = $"images/groups/{request.Image[0].FileName}";
 
-                    //var blobClient = new BlobClient(blobconnect, container, fileName);
-
-                    //using (var stream = new MemoryStream(imageBytes))
-                    //{
-                    //    await blobClient.UploadAsync(stream);
-                    //}
-                    //var urlImg = blobClient.Uri.AbsoluteUri;
-
-                    //grp.Avatar = group.Avatar = urlImg;
+                    chatContext.Groups.Update(grp);
+                    await chatContext.SaveChangesAsync();
                 }
-                await chatContext.SaveChangesAsync();
             }
-            return group;
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra: " + ex.Message);
+            }
         }
 
         //public async Task UploadBlobFile(IFormFile blob)
@@ -403,6 +451,7 @@ namespace notip_server.Service
 
 
         //}
+
         /// <summary>
         /// Gửi tin nhắn
         /// </summary>
@@ -440,16 +489,16 @@ namespace notip_server.Service
                     CreatedBy = userCode,
                     Type = Constants.GroupType.SINGLE,
                     GroupUsers = new List<GroupUser>()
+                    {
+                        new GroupUser()
                         {
-                            new GroupUser()
-                            {
-                                UserCode = userCode
-                            },
-                            new GroupUser()
-                            {
-                                UserCode = sendTo.Code
-                            }
+                            UserCode = userCode
+                        },
+                        new GroupUser()
+                        {
+                            UserCode = sendTo.Code
                         }
+                    }
                 };
                 await chatContext.Groups.AddAsync(grp);
             }
@@ -457,21 +506,23 @@ namespace notip_server.Service
             // Nếu tin nhắn có file => lưu file
             if (message.Attachments != null && message.Attachments.Count > 0)
             {
-                string path = Path.Combine(webHostEnvironment.ContentRootPath, $"Resource/Attachment/{DateTime.Now.Year}");
+                string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Attachments/{groupCode}/{DateTime.Now.Year}/");
                 FileHelper.CreateDirectory(path);
                 try
                 {
                     if (message.Attachments[0].Length > 0)
                     {
-                        string pathFile = path + "/" + message.Attachments[0].FileName;
+                        string pathFile = path + message.Attachments[0].FileName;
                         if (!File.Exists(pathFile))
                         {
-                            using (var stream = new MemoryStream())
+
+                            using (var stream = new FileStream(pathFile, FileMode.Create))
                             {
                                 await message.Attachments[0].CopyToAsync(stream);
                                 //await UploadBlobFile(message.Attachments[0]);
                             }
                         }
+                        message.Path = $"Attachments/{groupCode}/{DateTime.Now.Year}/{message.Attachments[0].FileName}";
                         message.Content = message.Attachments[0].FileName;
                         //message.Path = $"https://pnchatstorage.blob.core.windows.net/{_storageContainerName}/{message.Attachments[0].FileName}";
                     }

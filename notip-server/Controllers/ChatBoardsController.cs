@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.ViewModel.ChatBoard;
 
 namespace notip_server.Controllers
 {
@@ -79,14 +80,14 @@ namespace notip_server.Controllers
 
         [Route("get-info")]
         [HttpGet]
-        public async Task<IActionResult> GetInfo(string groupCode, string contactCode)
+        public async Task<IActionResult> GetInfo(string groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.GetInfo(userSession, groupCode, contactCode);
+                responseAPI.Data = await _chatBoardService.GetInfo(userSession, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -100,15 +101,33 @@ namespace notip_server.Controllers
 
         [Route("groups")]
         [HttpPost]
-        public async Task<IActionResult> AddGroup(GroupDto group)
+        public async Task<IActionResult> AddGroup(AddGroupRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await _chatBoardService.AddGroup(userSession, group);
+                await _chatBoardService.AddGroup(userSession, request);
 
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [Route("update-group-name")]
+        [HttpPut]
+        public async Task<IActionResult> UpdateGroupName(UpdateGroupNameRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+
+            try
+            {
+                await _chatBoardService.UpdateGroupName(request);
                 return Ok(responseAPI);
             }
             catch (Exception ex)
@@ -140,13 +159,13 @@ namespace notip_server.Controllers
 
         [Route("update-group-avatar")]
         [HttpPut]
-        public async Task<IActionResult> UpdateGroupAvatar(GroupDto group)
+        public async Task<IActionResult> UpdateGroupAvatar(UpdateGroupAvatarRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                responseAPI.Data = await _chatBoardService.UpdateGroupAvatar(group);
+                await _chatBoardService.UpdateGroupAvatar(request);
 
                 return Ok(responseAPI);
             }
@@ -157,6 +176,23 @@ namespace notip_server.Controllers
             }
         }
 
+        [Route("add-members-to-group")]
+        [HttpPost]
+        public async Task<IActionResult> AddMembersToGroup(AddMembersToGroupRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                await _chatBoardService.AddMembersToGroup(request);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
 
         [Route("send-message")]
         [HttpPost]

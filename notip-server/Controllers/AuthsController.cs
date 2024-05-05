@@ -6,6 +6,7 @@ using notip_server.Service;
 using notip_server.Interfaces;
 using System;
 using notip_server.ViewModel.Auth;
+using Microsoft.Extensions.Hosting;
 
 namespace notip_server.Controllers
 {
@@ -62,46 +63,28 @@ namespace notip_server.Controllers
             }
         }
 
-        //[HttpGet("img")]
-        //public async Task<IActionResult> DownloadImage(string key)
-        //{
-        //    try
-        //    {
-        //        BlobDto result = await _azureStorage.DownloadAsync(key);
+        [HttpGet("file")]
+        public async Task<IActionResult> DownloadFile(string path)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
 
-        //        return File(result.Content, result.ContentType);
-        //        //string path = Path.Combine(_webHostEnvironment.ContentRootPath, key);
-        //        //var image = System.IO.File.OpenRead(path);
+            try
+            {
+                string filePath = Path.Combine(_webHostEnvironment.ContentRootPath, "wwwroot", path);
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound("File not found.");
 
-        //        //return File(image, "image/*");
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return BadRequest();
-        //    }
-        //}
+                var fileName = filePath.Split("/");
+                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
 
-        //[HttpGet("file")]
-        //public async Task<IActionResult> DownloadFile(string key)
-        //{
-        //    ResponseAPI responseAPI = new ResponseAPI();
-
-        //    try
-        //    {
-        //        //string path = Path.Combine(_webHostEnvironment.ContentRootPath, key);
-        //        //Stream stream = new FileStream(path, FileMode.Open);
-        //        responseAPI.Data = "";
-        //        BlobDto result = await _azureStorage.DownloadAsync(key);
-
-        //        return File(result.Content, result.ContentType, result.Name);
-        //        //return File(stream, "application/octet-stream", key);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        responseAPI.Message = ex.Message;
-        //        return BadRequest(responseAPI);
-        //    }
-        //}
+                return File(fileStream, "application/octet-stream", fileName[fileName.Length - 1]);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
 
         [Route("post-hubconnection")]
         [HttpPost]
