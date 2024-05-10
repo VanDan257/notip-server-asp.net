@@ -10,6 +10,10 @@ using System.Runtime.ExceptionServices;
 using Microsoft.AspNetCore.Http.HttpResults;
 using System.Data;
 using notip_server.ViewModel.ChatBoard;
+using System.Numerics;
+using System.Net;
+using System.Reflection;
+using static notip_server.Utils.Constants;
 
 namespace notip_server.Service
 {
@@ -89,6 +93,9 @@ namespace notip_server.Service
 
         /// <summary>
         /// Tìm kiếm nhóm chat
+        /// Đầu tiên sẽ lấy danh sách nhóm chat theo keySearch, sau đó lấy danh sách tên user theo keySearch
+        /// Nếu user và user hiện tại đã từng nhắn tin riêng sẽ lấy Code của Group theo Group chat riêng
+        /// Nếu không sẽ trả về Code của user
         /// </summary>
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="keySearch">Tên nhóm hoặc tên người dùng cần tìm</param>
@@ -118,11 +125,11 @@ namespace notip_server.Service
                 for(int i = 0; i < users.Count; i++)
                 {
                     string groupCode = await chatContext.Groups
-                    .Where(x => x.Type.Equals(Constants.GroupType.SINGLE))
-                    .Where(x => x.GroupUsers.Any(y => y.UserCode.Equals(userCode) &&
-                                x.GroupUsers.Any(y => y.UserCode.Equals(users[i].Code))))
-                    .Select(x => x.Code)
-                    .FirstOrDefaultAsync();
+                        .Where(x => x.Type.Equals(Constants.GroupType.SINGLE))
+                        .Where(x => x.GroupUsers.Any(y => y.UserCode.Equals(userCode) &&
+                                    x.GroupUsers.Any(y => y.UserCode.Equals(users[i].Code))))
+                        .Select(x => x.Code)
+                        .FirstOrDefaultAsync();
                     if (!string.IsNullOrEmpty(groupCode))
                     {
                         groups.Add(new GroupDto
@@ -156,60 +163,157 @@ namespace notip_server.Service
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="groupCode">Code của group muốn truy cập</param>
         /// <returns></returns>
-        public async Task<List<MessageDto>> AccessChatGroup(string userCode, string groupCode)
+        public async Task<GroupDto> AccessChatGroup(string userCode, string groupCode)
         {
             Group grp = await chatContext.Groups
                 .FirstOrDefaultAsync(x => x.Code == groupCode);
 
             if(grp != null)
             {
-                return await chatContext.Messages
-                    .Where(x => x.GroupCode.Equals(groupCode))
-                    .Where(x => x.Group.GroupUsers.Any(y => y.UserCode.Equals(userCode)))
-                    .OrderBy(x => x.Created)
-                    .Select(x => new MessageDto()
-                    {
-                        Created = x.Created,
-                        Content = x.Content,
-                        CreatedBy = x.CreatedBy,
-                        GroupCode = x.GroupCode,
-                        Id = x.Id,
-                        Path = x.Path,
-                        Type = x.Type,
-                        UserCreatedBy = new UserDto()
-                        {
-                            Avatar = x.UserCreatedBy.Avatar
-                        }
-                    }).ToListAsync();
+                var group = new GroupDto
+                {
+                    Code = grp.Code,
+                    Type = grp.Type,
+                    Avatar = grp.Avatar,
+                    Name = grp.Name,
+                    Created = grp.Created,
+                    CreatedBy = grp.CreatedBy,
+                    LastActive = grp.LastActive,
+                };
+
+                if (grp.Type == GroupType.SINGLE)
+                {
+                    var partner = await chatContext.GroupUsers.Where(x => x.GroupCode == groupCode && x.UserCode != userCode)
+                        .Join(chatContext.Users,
+                            grpUsers => grpUsers.UserCode,
+                            users => users.Code,
+                            (grpUsers, users) => new UserDto
+                            {
+                                Code = users.Code,
+                                FullName = users.FullName,
+                                Dob = users.Dob,
+                                Phone = users.Phone,
+                                Email = users.Email,
+                                Address = users.Address,
+                                Avatar = users.Avatar,
+                                Gender = users.Gender
+                            })
+                        .FirstOrDefaultAsync();
+
+                    group.Avatar = partner.Avatar;
+                    group.Name = partner.FullName;
+                }
+                else
+                {
+                    var groupUsers = chatContext.GroupUsers
+                        .Where(x => x.GroupCode == groupCode)
+                        .Join(chatContext.Users,
+                            grpUsers => grpUsers.UserCode,
+                            users => users.Code,
+                            (grpUsers, users) => new UserDto
+                            {
+                                Code = users.Code,
+                                FullName = users.FullName,
+                                Dob = users.Dob,
+                                Phone = users.Phone,
+                                Email = users.Email,
+                                Address = users.Address,
+                                Avatar = users.Avatar,
+                                Gender = users.Gender
+                            })
+                        .ToList();
+
+                    group.Users = groupUsers;
+                }
+
+                return group;
+
+                //return response;
             }
             else
             {
-                Group newGroup = new Group
+
+                // Nếu nhóm không tồn tại => cố gắng lấy thông tin nhóm đã từng chat giữa 2 người
+                string grpCode = await chatContext.Groups
+                    .Where(x => x.Type.Equals(Constants.GroupType.SINGLE))
+                    .Where(x => x.GroupUsers.Any(y => y.UserCode.Equals(userCode) &&
+                                x.GroupUsers.Any(y => y.UserCode.Equals(groupCode))))
+                    .Select(x => x.Code)
+                    .FirstOrDefaultAsync();
+
+                grp = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code.Equals(grpCode));
+
+                if(grp != null)
                 {
-                    Code = Guid.NewGuid().ToString("N"),
-                    Created = DateTime.Now,
-                    CreatedBy = userCode,
-                    Type = Constants.GroupType.SINGLE,
-                    LastActive = DateTime.Now
-                };
+                    var partner = await chatContext.GroupUsers.Where(x => x.GroupCode == grp.Code && x.UserCode != userCode)
+                        .Join(chatContext.Users,
+                            grpUsers => grpUsers.UserCode,
+                            users => users.Code,
+                            (grpUsers, users) => new UserDto
+                            {
+                                Code = users.Code,
+                                FullName = users.FullName,
+                                Dob = users.Dob,
+                                Phone = users.Phone,
+                                Email = users.Email,
+                                Address = users.Address,
+                                Avatar = users.Avatar,
+                                Gender = users.Gender
+                            })
+                        .FirstOrDefaultAsync();
 
-                newGroup.GroupUsers = new List<GroupUser>();
-                newGroup.GroupUsers.Add(new GroupUser
+                    return new GroupDto
+                    {
+                        Code = grp.Code,
+                        Type = grp.Type,
+                        Avatar = partner.Avatar,
+                        Name = partner.FullName,
+                        Created = grp.Created,
+                        CreatedBy = grp.CreatedBy,
+                        LastActive = grp.LastActive,
+                    };
+                }
+                else
                 {
-                    GroupCode = newGroup.Code,
-                    UserCode = groupCode
-                });
+                    Group newGroup = new Group
+                    {
+                        Code = Guid.NewGuid().ToString("N"),
+                        Created = DateTime.Now,
+                        CreatedBy = userCode,
+                        Type = Constants.GroupType.SINGLE,
+                        LastActive = DateTime.Now
+                    };
 
-                newGroup.GroupUsers.Add(new GroupUser
-                {
-                    GroupCode = newGroup.Code,
-                    UserCode = userCode
-                });
+                    User receiver = await chatContext.Users.FirstOrDefaultAsync(x => x.Code == groupCode);
 
-                await chatContext.Groups.AddAsync(newGroup);
-                await chatContext.SaveChangesAsync();
+                    newGroup.GroupUsers = new List<GroupUser>();
+                    newGroup.GroupUsers.Add(new GroupUser
+                    {
+                        GroupCode = newGroup.Code,
+                        UserCode = groupCode
+                    });
 
-                return null;
+                    newGroup.GroupUsers.Add(new GroupUser
+                    {
+                        GroupCode = newGroup.Code,
+                        UserCode = userCode
+                    });
+
+                    await chatContext.Groups.AddAsync(newGroup);
+                    await chatContext.SaveChangesAsync();
+
+                    return new GroupDto
+                    {
+                        Code = newGroup.Code,
+                        Type = newGroup.Type,
+                        Avatar = receiver.Avatar,
+                        Name = receiver.FullName,
+                        Created = newGroup.Created,
+                        CreatedBy = newGroup.CreatedBy,
+                        LastActive = newGroup.LastActive,
+                    };
+                }
+
             }
         }
 
@@ -582,7 +686,15 @@ namespace notip_server.Service
                         Type = x.Type,
                         UserCreatedBy = new UserDto()
                         {
+                            Code = x.UserCreatedBy.Code,
+                            FullName = x.UserCreatedBy.FullName,
+                            Dob = x.UserCreatedBy.Dob,
+                            Phone = x.UserCreatedBy.Phone,
+                            Email = x.UserCreatedBy.Email,
+                            Address = x.UserCreatedBy.Address,
+                            Gender = x.UserCreatedBy.Gender,
                             Avatar = x.UserCreatedBy.Avatar
+
                         }
                     }).ToListAsync();
         }

@@ -7,7 +7,7 @@ namespace notip_server.Interfaces
     {
         Task<List<GroupDto>> GetHistory(string userSession);
         Task<List<GroupDto>> SearchChatGroup(string userCode, string keySearch);
-        Task<List<MessageDto>> AccessChatGroup(string userCode, string groupCode);
+        Task<GroupDto> AccessChatGroup(string userCode, string groupCode);
         Task<object> GetInfo(string userSession, string groupCode);
         Task AddGroup(string userCode, AddGroupRequest request);
         Task AddMembersToGroup(AddMembersToGroupRequest request);
