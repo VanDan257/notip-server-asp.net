@@ -1,4 +1,6 @@
-﻿using notip_server.Interfaces;
+﻿using Microsoft.AspNetCore.SignalR;
+using notip_server.Hubs;
+using notip_server.Interfaces;
 using notip_server.Service;
 
 namespace notip_server.Extensions

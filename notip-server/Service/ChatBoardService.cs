@@ -21,12 +21,12 @@ namespace notip_server.Service
     {
         private readonly DbChatContext chatContext;
         private readonly IWebHostEnvironment webHostEnvironment;
-        private IHubContext<ChatHub> chatHub;
+        private ChatHub chatHub;
         private readonly IUserService _userService;
         //private readonly string _storageConnectionString;
         //private readonly string _storageContainerName;
 
-        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, IHubContext<ChatHub> chatHub, IConfiguration configuration, IUserService userService)
+        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IConfiguration configuration, IUserService userService)
         {
             this.chatContext = chatContext;
             this.chatHub = chatHub;
@@ -654,8 +654,7 @@ namespace notip_server.Service
             await chatContext.SaveChangesAsync();
             try
             {
-                // Có thể tối ưu bằng cách chỉ gửi cho user trong nhóm chat
-               await chatHub.Clients.All.SendAsync("messageHubListener", true);
+                await chatHub.SendMessageToGroup(groupCode, userCode, msg);
             }
             catch (Exception ex)
             {

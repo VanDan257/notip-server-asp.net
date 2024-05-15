@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using notip_server.Data;
@@ -26,6 +27,8 @@ builder.Services.AddApplicationServices()
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
+
+builder.Services.AddScoped<ChatHub>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
