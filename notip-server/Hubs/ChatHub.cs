@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using notip_server.Data;
 using notip_server.Dto;
 using notip_server.Models;
@@ -10,14 +11,7 @@ namespace notip_server.Hubs
 {
     public class ChatHub : Hub
     {
-        private readonly DbChatContext _chatContext;
-
-        public ChatHub(DbChatContext chatContext)
-        {
-            _chatContext = chatContext;
-        }
-
-        public static ConcurrentDictionary<string, string> users = new ConcurrentDictionary<string, string>();
+        private Dictionary<string, string> users = new Dictionary<string, string>();
 
         public string GetConnectionId()
         {
@@ -26,69 +20,40 @@ namespace notip_server.Hubs
 
         public override Task OnConnectedAsync()
         {
-            users.TryAdd(Context.ConnectionId, Context.ConnectionId);
+            var httpContext = Context.GetHttpContext();
+            var userCode = httpContext.Request.Query["userCode"].ToString();
+
+            if (!string.IsNullOrEmpty(userCode) && !users.ContainsKey(userCode))
+            {
+                users.Add(userCode, Context.ConnectionId);
+            }
             return base.OnConnectedAsync();
         }
 
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            string user;
-            users.TryRemove(Context.ConnectionId, out user);
+            RemoveByValue(users, Context.ConnectionId);
+                //users.TryRemove(Context.ConnectionId, out user);
             return base.OnDisconnectedAsync(exception);
         }
 
-        public async Task AddToGroup(string groupName)
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-        }
-
-        public async Task SendMessageToGroup(string groupCode, string userCurrentCode, Message message)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="receiverIds">danh sách Code người nhận tin nhắn</param>
+        /// <param name="message">Tin nhắn</param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task SendMessage(List<string> receiverIds, string payload)
         {
             try
             {
-                // lấy tất cả thành viên trong group trừ người dùng hiện tại 
-                var members = await  _chatContext.GroupUsers
-                            .Where(x => x.GroupCode == groupCode && x.UserCode != userCurrentCode)
-                            .Join(_chatContext.Users,
-                                grpUsers => grpUsers.UserCode,
-                                users => users.Code,
-                                (grpUsers, users) => new
-                                {
-                                    Code = users.Code,
-                                    FullName = users.FullName,
-                                    Dob = users.Dob,
-                                    Phone = users.Phone,
-                                    Email = users.Email,
-                                    Address = users.Address,
-                                    Avatar = users.Avatar,
-                                    Gender = users.Gender,
-                                    CurrentSession = users.CurrentSession
-
-                                })
-                            .ToListAsync();
-
-                foreach(var member in members)
+                foreach(var receiverId in receiverIds)
                 {
-                    if (!string.IsNullOrEmpty(member.CurrentSession))
+                    if (users.TryGetValue(receiverId, out var connectionId))
                     {
-                        await SendMessage(member.CurrentSession, message);
+                        await Clients.Client(connectionId).SendAsync("ReceiveMessage", payload);
                     }
-                }
-            }
-            catch(Exception ex)
-            {
-                throw new Exception(ex.Message);
-            }
-        }
-
-        public async Task SendMessage(string receiverSession, Message message)
-        {
-            try
-            {
-                if (users.TryGetValue(receiverSession, out string receiver))
-                {
-
-                    await Clients.Client(receiverSession).SendAsync("ReceiveMessage", message);
                 }
             }
             catch (Exception ex)
@@ -96,6 +61,42 @@ namespace notip_server.Hubs
                 throw new Exception(ex.Message);
             }
         }
+
+        /// <summary>
+        /// Tìm kiếm Dictionary theo key
+        /// </summary>
+        /// <param name="dict"></param>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        private bool SearchByKey(Dictionary<string, string> dict, string key)
+        {
+            foreach (var item in dict)
+            {
+                if (item.Key == key)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Xoá Dictionary theo value
+        /// </summary>
+        /// <param name="dictionary"></param>
+        /// <param name="value"></param>
+        private static void RemoveByValue(Dictionary<string, string> dictionary, string value)
+        {
+            // Tìm tất cả các key có giá trị tương ứng cần xóa
+            var keysToRemove = dictionary.Where(kvp => kvp.Value == value).Select(kvp => kvp.Key).ToList();
+
+            // Xóa các phần tử theo key
+            foreach (var key in keysToRemove)
+            {
+                dictionary.Remove(key);
+            }
+        }
+
         //test hub
         /*
         public async Task AskServer(string textFromClient)

@@ -14,11 +14,13 @@ using System.Numerics;
 using System.Net;
 using System.Reflection;
 using static notip_server.Utils.Constants;
+using Newtonsoft.Json;
 
 namespace notip_server.Service
 {
     public class ChatBoardService : IChatBoardService
     {
+        #region fields
         private readonly DbChatContext chatContext;
         private readonly IWebHostEnvironment webHostEnvironment;
         private ChatHub chatHub;
@@ -26,6 +28,9 @@ namespace notip_server.Service
         //private readonly string _storageConnectionString;
         //private readonly string _storageContainerName;
 
+        #endregion
+
+        #region ctor
         public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IConfiguration configuration, IUserService userService)
         {
             this.chatContext = chatContext;
@@ -36,6 +41,7 @@ namespace notip_server.Service
             //_storageContainerName = configuration.GetValue<string>("BlobContainerName");
         }
 
+        #endregion
 
         /// <summary>
         /// Danh sách lịch sử chat
@@ -619,7 +625,6 @@ namespace notip_server.Service
                         string pathFile = path + message.Attachments[0].FileName;
                         if (!File.Exists(pathFile))
                         {
-
                             using (var stream = new FileStream(pathFile, FileMode.Create))
                             {
                                 await message.Attachments[0].CopyToAsync(stream);
@@ -654,11 +659,42 @@ namespace notip_server.Service
             await chatContext.SaveChangesAsync();
             try
             {
-                await chatHub.SendMessageToGroup(groupCode, userCode, msg);
+                var groupUsers = chatContext.GroupUsers
+                        .Where(x => x.GroupCode == groupCode && x.UserCode != userCode)
+                        .Join(chatContext.Users,
+                            grpUsers => grpUsers.UserCode,
+                            users => users.Code,
+                            (grpUsers, users) => 
+                                users.Code
+                            )
+                        .ToList();
+
+                var userCreatedBy = await chatContext.Users
+                    .Where(x => x.Code == userCode)
+                    .Select(x => new UserDto
+                    {
+                        FullName = x.FullName,
+                        Avatar = x.Avatar
+                    })
+                    .FirstOrDefaultAsync();
+
+                var messageDto = new MessageDto
+                {
+                    Id = msg.Id,
+                    Type = msg.Type,
+                    GroupCode = msg.GroupCode,
+                    Content = msg.Content,
+                    Path = msg.Path,
+                    Created = msg.Created,
+                    CreatedBy = msg.CreatedBy,
+                    UserCreatedBy = userCreatedBy
+                };
+                var payload = JsonConvert.SerializeObject(messageDto);
+                await chatHub.SendMessage(groupUsers, payload);
             }
             catch (Exception ex)
             {
-                //throw new Exception()
+                throw new Exception(ex.Message);
             }
         }
 

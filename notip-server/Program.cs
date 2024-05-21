@@ -28,7 +28,7 @@ builder.Services.AddApplicationServices()
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 
-builder.Services.AddScoped<ChatHub>();
+builder.Services.AddSingleton<ChatHub>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
@@ -38,7 +38,6 @@ builder.Services.AddDbContext<DbChatContext>(option =>
     option.UseLazyLoadingProxies().UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString));
 });
 #endregion
-
 
 var app = builder.Build();
 

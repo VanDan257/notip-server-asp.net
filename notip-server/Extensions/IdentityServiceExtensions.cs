@@ -47,6 +47,12 @@ namespace notip_server.Extensions
                 .AddJwtBearer();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            //services.AddControllers()
+            //    .AddNewtonsoftJson(options =>
+            //    {
+            //        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+            //    });
+
             return services;
         }
     }
