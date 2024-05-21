@@ -155,9 +155,36 @@ namespace notip_server.Service
             });
 
             // Loại bỏ liên hệ đã có
-            return users.FindAll(x => !x.IsFriend || x.IsFriend);
+            return users;
         }
 
-        
+        /// <summary>
+        /// Lấy thông tin người dùng theo code
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <returns></returns>
+        public async Task<UserDto> GetUserByUserCode(string userCode)
+        {
+            try
+            {
+                return await chatContext.Users.Where(x => x.Code == userCode)
+                    .Select(x => new UserDto
+                    {
+                        Code = x.Code,
+                        FullName = x.FullName,
+                        Dob = x.Dob,
+                        Phone = x.Phone,
+                        Email = x.Email,
+                        Address = x.Address,
+                        Avatar = x.Avatar,
+                        Gender = x.Gender
+                    })
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
     }
 }

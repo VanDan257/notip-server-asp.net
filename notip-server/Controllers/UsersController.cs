@@ -119,5 +119,24 @@ namespace notip_server.Controllers
                 return BadRequest(responseAPI);
             }
         }
+
+        [Route("get-user-by-user-code")]
+        [HttpGet]
+        public async Task<IActionResult> GetUserByUserCode(string userCode)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                var user = await _userService.GetUserByUserCode(userCode);
+                responseAPI.Data = user;
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
     }
 }

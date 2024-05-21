@@ -10,5 +10,6 @@ namespace notip_server.Interfaces
         Task<List<UserDto>> GetContact(string userCode);
         Task<List<UserDto>> SearchContact(string userCode, string keySearch);
         Task AddContact(string userCode, UserDto user);
+        Task<UserDto> GetUserByUserCode(string userCode);
     }
 }
