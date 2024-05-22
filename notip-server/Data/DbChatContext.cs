@@ -22,6 +22,8 @@ namespace notip_server.Data
 
         public DbSet<User> Users { get; set; }
 
+        public DbSet<Friend> Friends { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -46,6 +48,9 @@ namespace notip_server.Data
 
             //flutent api cho table User
             modelBuilder.ApplyConfiguration(new UserConfiguration());
+
+            //flutent api cho table Friend
+            modelBuilder.ApplyConfiguration(new FriendConfiguration());
         }
     }
 }
