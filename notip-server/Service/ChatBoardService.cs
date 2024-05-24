@@ -15,6 +15,7 @@ using System.Net;
 using System.Reflection;
 using static notip_server.Utils.Constants;
 using Newtonsoft.Json;
+using notip_server.ViewModel.Friend;
 
 namespace notip_server.Service
 {
@@ -60,7 +61,7 @@ namespace notip_server.Service
                         Avatar = x.Avatar,
                         Type = x.Type,
                         LastActive = x.LastActive,
-                        Users = x.GroupUsers.Select(y => new UserDto()
+                        Users = x.GroupUsers.Select(y => new FriendResponse()
                         {
                             Code = y.User.Code,
                             FullName = y.User.FullName,
@@ -117,7 +118,7 @@ namespace notip_server.Service
                         Avatar = x.Avatar,
                         Type = x.Type,
                         LastActive = x.LastActive,
-                        Users = x.GroupUsers.Select(y => new UserDto()
+                        Users = x.GroupUsers.Select(y => new FriendResponse()
                         {
                             Code = y.User.Code,
                             FullName = y.User.FullName,
@@ -216,7 +217,7 @@ namespace notip_server.Service
                         .Join(chatContext.Users,
                             grpUsers => grpUsers.UserCode,
                             users => users.Code,
-                            (grpUsers, users) => new UserDto
+                            (grpUsers, users) => new FriendResponse
                             {
                                 Code = users.Code,
                                 FullName = users.FullName,

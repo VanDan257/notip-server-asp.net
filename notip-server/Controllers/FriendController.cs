@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.ViewModel.Friend;
 
 namespace notip_server.Controllers
 {
@@ -20,14 +21,14 @@ namespace notip_server.Controllers
 
         [Route("send-friend-request")]
         [HttpPost]
-        public async Task<IActionResult> SendFriendRequest(string receiverCode)
+        public async Task<IActionResult> SendFriendRequest(FriendRequest receiver)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.SendFriendRequest(userSession, receiverCode);
+                await friendService.SendFriendRequest(userSession, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -40,13 +41,13 @@ namespace notip_server.Controllers
 
         [Route("accept-friend-request")]
         [HttpPatch]
-        public async Task<IActionResult> AcceptFriendRequest(int requestId)
+        public async Task<IActionResult> AcceptFriendRequest(HandleFriendRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                await friendService.AcceptFriendRequest(requestId);
+                await friendService.AcceptFriendRequest(request.requestId);
 
                 return Ok();
             }
@@ -59,13 +60,13 @@ namespace notip_server.Controllers
 
         [Route("cancel-friend-request")]
         [HttpPatch]
-        public async Task<IActionResult> CancelFriendRequest(int requestId)
+        public async Task<IActionResult> CancelFriendRequest( HandleFriendRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                await friendService.CancelFriendRequest(requestId);
+                await friendService.CancelFriendRequest(request.requestId);
 
                 return Ok();
             }
@@ -78,14 +79,14 @@ namespace notip_server.Controllers
 
         [Route("block-user")]
         [HttpPost]
-        public async Task<IActionResult> BlockUser(string receiverCode)
+        public async Task<IActionResult> BlockUser(FriendRequest receiver)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.BlockUser(userSession, receiverCode);
+                await friendService.BlockUser(userSession, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -98,13 +99,13 @@ namespace notip_server.Controllers
 
         [Route("unblock-user")]
         [HttpPatch]
-        public async Task<IActionResult> UnBlockUser(int requestId)
+        public async Task<IActionResult> UnBlockUser( HandleFriendRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                await friendService.UnBlockUser(requestId);
+                await friendService.UnBlockUser(request.requestId);
 
                 return Ok();
             }

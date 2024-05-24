@@ -148,13 +148,6 @@ namespace notip_server.Service
                     FullName = x.FullName,
                 }).ToListAsync();
 
-            users.ForEach(x =>
-            {
-                if (friends.Any(y => y.UserCode.Equals(x.Code) || y.ContactCode.Equals(x.Code)))
-                    x.IsFriend = true;
-            });
-
-            // Loại bỏ liên hệ đã có
             return users;
         }
 

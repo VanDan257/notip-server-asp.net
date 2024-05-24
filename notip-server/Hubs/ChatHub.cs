@@ -11,6 +11,7 @@ namespace notip_server.Hubs
 {
     public class ChatHub : Hub
     {
+        //              <userCode, ConnectionId>
         private Dictionary<string, string> users = new Dictionary<string, string>();
 
         public string GetConnectionId()
@@ -38,7 +39,7 @@ namespace notip_server.Hubs
         }
 
         /// <summary>
-        /// 
+        /// Gửi tin nhắn
         /// </summary>
         /// <param name="receiverIds">danh sách Code người nhận tin nhắn</param>
         /// <param name="message">Tin nhắn</param>
@@ -63,7 +64,7 @@ namespace notip_server.Hubs
         }
 
         /// <summary>
-        /// Tìm kiếm Dictionary theo key
+        /// Tìm kiếm user trực tuyến theo theo key
         /// </summary>
         /// <param name="dict"></param>
         /// <param name="key"></param>

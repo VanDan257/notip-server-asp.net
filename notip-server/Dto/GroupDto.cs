@@ -1,4 +1,5 @@
 ﻿using notip_server.Models;
+using notip_server.ViewModel.Friend;
 
 namespace notip_server.Dto
 {
@@ -18,7 +19,7 @@ namespace notip_server.Dto
 
         public DateTime LastActive { get; set; }
 
-        public List<UserDto> Users { get; set; }
+        public List<FriendResponse> Users { get; set; }
 
         public MessageDto LastMessage { get; set; }
     }
