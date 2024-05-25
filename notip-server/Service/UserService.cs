@@ -5,6 +5,10 @@ using notip_server.Models;
 using notip_server.Interfaces;
 using notip_server.ViewModel.User;
 using System.Numerics;
+using System.Net.WebSockets;
+using notip_server.Utils;
+using notip_server.ViewModel.Friend;
+using notip_server.ViewModel.Common;
 
 namespace notip_server.Service
 {
@@ -96,83 +100,101 @@ namespace notip_server.Service
         }
 
         /// <summary>
-        /// Lấy danh sách liên hệ của user
-        /// </summary>
-        /// <param name="userCode">User hiện tại đang đăng nhập</param>
-        /// <returns>Danh sách liên hệ</returns>
-        public async Task<List<UserDto>> GetContact(string userCode)
-        {
-            return await chatContext.Contacts
-                     .Where(x => x.UserCode.Equals(userCode) || x.ContactCode.Equals(userCode))
-                     .OrderBy(x => x.UserContact.FullName)
-                     .Select(x => new UserDto()
-                     {
-                         Avatar = x.UserContact.Avatar,
-                         Code = x.UserContact.Code,
-                         FullName = x.UserContact.FullName,
-                         Address = x.UserContact.Address,
-                         Dob = x.UserContact.Dob,
-                         Email = x.UserContact.Email,
-                         Gender = x.UserContact.Gender,
-                         Phone = x.UserContact.Phone
-                     }).ToListAsync();
-        }
-
-        /// <summary>
-        /// Tìm kiếm liên hệ.
-        /// </summary>
-        /// <param name="userCode">User hiện tại đang đăng nhập</param>
-        /// <param name="keySearch">Từ khóa tìm kiếm</param>
-        /// <returns></returns>
-        public async Task<List<UserDto>> SearchContact(string userCode, string keySearch)
-        {
-            if (string.IsNullOrWhiteSpace(keySearch))
-                return new List<UserDto>();
-
-            List<ContactDto> friends = await chatContext.Contacts
-                   .Where(x => x.UserCode.Equals(userCode) || x.ContactCode.Equals(userCode))
-                   .Select(x => new ContactDto()
-                   {
-                       ContactCode = x.ContactCode,
-                       UserCode = x.UserCode
-                   }).ToListAsync();
-
-            List<UserDto> users = await chatContext.Users
-                .Where(x => !x.Code.Equals(userCode))
-                .Where(x => x.FullName.Contains(keySearch) || x.Phone.Contains(keySearch) || x.Email.Contains(keySearch))
-                .OrderBy(x => x.FullName)
-                .Select(x => new UserDto()
-                {
-                    Avatar = x.Avatar,
-                    Code = x.Code,
-                    FullName = x.FullName,
-                }).ToListAsync();
-
-            return users;
-        }
-
-        /// <summary>
         /// Lấy thông tin người dùng theo code
         /// </summary>
         /// <param name="userCode"></param>
         /// <returns></returns>
-        public async Task<UserDto> GetUserByUserCode(string userCode)
+        public async Task<PagingResult<FriendResponse>> GetContact(string userSession, GetContactRequest request)
         {
             try
             {
-                return await chatContext.Users.Where(x => x.Code == userCode)
-                    .Select(x => new UserDto
+
+                var query = chatContext.Users.AsQueryable();
+
+                if (!string.IsNullOrEmpty(request.UserCode))
+                {
+                    query = query.Where(x => x.Code == request.UserCode);
+                }
+                else if (!string.IsNullOrEmpty(request.KeySearch))
+                {
+                    query.Where(x => x.Code != userSession);
+                        //.Where(x => x.FullName.Contains(request.KeySearch));
+                }
+
+                int total = await query.CountAsync();
+
+                if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
+
+                int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
+
+                var users = await query
+                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    .Take(request.PageSize.Value)
+                    .Select(x => new FriendResponse()
                     {
+                        Avatar = x.Avatar,
                         Code = x.Code,
                         FullName = x.FullName,
-                        Dob = x.Dob,
-                        Phone = x.Phone,
-                        Email = x.Email,
                         Address = x.Address,
-                        Avatar = x.Avatar,
-                        Gender = x.Gender
+                        Dob = x.Dob,
+                        Email = x.Email,
+                        Gender = x.Gender,
+                        Phone = x.Phone
                     })
-                    .FirstOrDefaultAsync();
+                    .ToListAsync();
+
+                if (users != null)
+                {
+                    foreach(var user in users)
+                    {
+                        var friend = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == userSession && x.ReceiverCode == user.Code);
+                        if(friend != null)
+                        {
+                            switch (friend.Status)
+                            {
+                                case Constants.FriendStatus.FRIEND:
+                                    user.IsFriend = true;
+                                    break;
+
+                                case Constants.FriendStatus.FRIENDREQUEST:
+                                    user.IsSentFriend = true;
+                                    break;
+
+                                case Constants.FriendStatus.BLOCKED:
+                                    user.IsBlocked = true;
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            var friend1 = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == user.Code && x.ReceiverCode == userSession);
+                            if (friend1 != null)
+                            {
+                                switch (friend1.Status)
+                                {
+                                    case Constants.FriendStatus.FRIEND:
+                                        user.IsFriend = true;
+                                        break;
+
+                                    case Constants.FriendStatus.FRIENDREQUEST:
+                                        user.IsBeenSentFriend = true;
+                                        break;
+
+                                    case Constants.FriendStatus.BLOCKED:
+                                        user.IsBeenBlocked = true;
+                                        break;
+                                }
+                            }
+                        }
+                    }
+
+                    return new PagingResult<FriendResponse>(users, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
+                }
+                else
+                {
+                    throw new Exception("Không tìm thấy người dùng");
+                }
             }
             catch (Exception ex)
             {

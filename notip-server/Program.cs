@@ -35,7 +35,8 @@ builder.Services.AddSingleton<ChatHub>();
 #region EntityFramework Core
 builder.Services.AddDbContext<DbChatContext>(option =>
 {
-    option.UseLazyLoadingProxies().UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString));
+    option.UseLazyLoadingProxies().UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString))
+    .LogTo(Console.WriteLine, LogLevel.Information);
 });
 #endregion
 

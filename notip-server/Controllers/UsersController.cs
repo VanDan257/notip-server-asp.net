@@ -19,8 +19,7 @@ namespace notip_server.Controllers
             _contextAccessor = contextAccessor;
         }
 
-        [Route("profile")]
-        [HttpGet]
+        [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
             ResponseAPI responseAPI = new ResponseAPI();
@@ -40,8 +39,7 @@ namespace notip_server.Controllers
         }
 
 
-        [Route("profile")]
-        [HttpPut]
+        [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
@@ -60,50 +58,7 @@ namespace notip_server.Controllers
             }
         }
 
-
-        [Route("contacts")]
-        [HttpGet]
-        public async Task<IActionResult> GetContact()
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
-
-            try
-            {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _userService.GetContact(userSession);
-
-                return Ok(responseAPI);
-            }
-            catch (Exception ex)
-            {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
-            }
-        }
-
-
-        [Route("contacts/search")]
-        [HttpGet]
-        public async Task<IActionResult> SearchContact(string keySearch = null)
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
-
-            try
-            {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _userService.SearchContact(userSession, keySearch);
-
-                return Ok(responseAPI);
-            }
-            catch (Exception ex)
-            {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
-            }
-        }
-
-        [Route("contacts")]
-        [HttpPost]
+        [HttpPost("contacts")]
         public async Task<IActionResult> AddContact(UserDto user)
         {
             ResponseAPI responseAPI = new ResponseAPI();
@@ -120,14 +75,14 @@ namespace notip_server.Controllers
             }
         }
 
-        [Route("get-user-by-user-code")]
-        [HttpGet]
-        public async Task<IActionResult> GetUserByUserCode(string userCode)
+        [HttpGet("get-contact")]
+        public async Task<IActionResult> GetContact([FromQuery] GetContactRequest request)
         {
+            string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                var user = await _userService.GetUserByUserCode(userCode);
+                var user = await _userService.GetContact(userSession, request);
                 responseAPI.Data = user;
 
                 return Ok(responseAPI);

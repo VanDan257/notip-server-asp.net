@@ -16,6 +16,8 @@ using System.Reflection;
 using static notip_server.Utils.Constants;
 using Newtonsoft.Json;
 using notip_server.ViewModel.Friend;
+using notip_server.ViewModel.User;
+using System.Net.WebSockets;
 
 namespace notip_server.Service
 {
@@ -61,7 +63,7 @@ namespace notip_server.Service
                         Avatar = x.Avatar,
                         Type = x.Type,
                         LastActive = x.LastActive,
-                        Users = x.GroupUsers.Select(y => new FriendResponse()
+                        Users = x.GroupUsers.Select(y => new UserDto()
                         {
                             Code = y.User.Code,
                             FullName = y.User.FullName,
@@ -118,7 +120,7 @@ namespace notip_server.Service
                         Avatar = x.Avatar,
                         Type = x.Type,
                         LastActive = x.LastActive,
-                        Users = x.GroupUsers.Select(y => new FriendResponse()
+                        Users = x.GroupUsers.Select(y => new UserDto()
                         {
                             Code = y.User.Code,
                             FullName = y.User.FullName,
@@ -126,8 +128,14 @@ namespace notip_server.Service
                         }).ToList(),
                     }).ToListAsync();
 
-            List<UserDto> users = await _userService.SearchContact(userCode, keySearch);
-            if(users.Count > 0)
+            var requestContact = new GetContactRequest
+            {
+                KeySearch = keySearch,
+                PageSize = 8
+            };
+            var result = await _userService.GetContact(userCode, requestContact);
+            List<FriendResponse> users = result.Items;
+            if (users.Count > 0)
             {
                 for(int i = 0; i < users.Count; i++)
                 {
@@ -217,7 +225,7 @@ namespace notip_server.Service
                         .Join(chatContext.Users,
                             grpUsers => grpUsers.UserCode,
                             users => users.Code,
-                            (grpUsers, users) => new FriendResponse
+                            (grpUsers, users) => new UserDto
                             {
                                 Code = users.Code,
                                 FullName = users.FullName,

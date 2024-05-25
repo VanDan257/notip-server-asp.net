@@ -24,6 +24,12 @@ namespace notip_server.Utils
             public const string FRIEND = "FRIEND";
         }
 
+        public class OrderBy
+        {
+            public const string ASC = "ASC";
+            public const string DESC = "DESC";
+        }
+
         public const string AVATAR_DEFAULT = "images/no_image.jpg";
     }
 }
