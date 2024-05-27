@@ -53,11 +53,10 @@ namespace notip_server.Service
             var friends = await query
                 .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                 .Take(request.PageSize.Value)
+                .OrderBy(x => x.FullName)
             .ToListAsync();
 
             return new PagingResult<FriendResponse>(friends, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
-
-
         }
 
         /// <summary>
@@ -70,9 +69,8 @@ namespace notip_server.Service
         {
             var query = from user in _chatContext.Users
                         join friend in _chatContext.Friends
-                        on new { Code = user.Code } equals new { Code = friend.SenderCode } into friendsGroup
-                        from friend in friendsGroup.DefaultIfEmpty()
-                        where (user.Code == friend.SenderCode || user.Code == friend.ReceiverCode)
+                        on user.Code equals friend.SenderCode
+                        where friend.ReceiverCode == userSession
                                 && friend.Status == Constants.FriendStatus.FRIENDREQUEST
                         select new FriendResponse
                         {
@@ -83,7 +81,7 @@ namespace notip_server.Service
                             Email = user.Code,
                             Address = user.Address,
                             Avatar = user.Avatar,
-                            IsFriend = true
+                            IsBeenSentFriend = true
                         };
             int total = await query.CountAsync();
 
@@ -95,6 +93,7 @@ namespace notip_server.Service
             var friends = await query
                 .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                 .Take(request.PageSize.Value)
+                .OrderBy(x => x.FullName)
             .ToListAsync();
 
             return new PagingResult<FriendResponse>(friends, request.PageIndex.Value, request.PageSize.Value, total, totalPages);

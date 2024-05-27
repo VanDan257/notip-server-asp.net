@@ -28,7 +28,7 @@ namespace notip_server.Controllers
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.GetListFriend(userSession, request);
+                responseAPI.Data = await friendService.GetListFriend(userSession, request);
 
                 return Ok(responseAPI);
             }
@@ -47,7 +47,7 @@ namespace notip_server.Controllers
             try
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.GetListFriendInvite(userSession, request);
+                responseAPI.Data = await friendService.GetListFriendInvite(userSession, request);
 
                 return Ok(responseAPI);
             }
