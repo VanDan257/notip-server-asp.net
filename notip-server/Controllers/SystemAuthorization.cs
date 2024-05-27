@@ -60,7 +60,7 @@ namespace notip_server.Controllers
                 return userSession;
             } catch
             {
-                throw new ArgumentException("Lỗi xác thực");
+                throw new Exception("Lỗi xác thực");
             }
         }
 

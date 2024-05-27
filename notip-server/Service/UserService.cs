@@ -108,7 +108,6 @@ namespace notip_server.Service
         {
             try
             {
-
                 var query = chatContext.Users.AsQueryable();
 
                 if (!string.IsNullOrEmpty(request.UserCode))
@@ -117,8 +116,8 @@ namespace notip_server.Service
                 }
                 else if (!string.IsNullOrEmpty(request.KeySearch))
                 {
-                    query.Where(x => x.Code != userSession);
-                        //.Where(x => x.FullName.Contains(request.KeySearch));
+                    query = query.Where(x => x.Code != userSession)
+                                 .Where(x => x.FullName.ToLower().Contains(request.KeySearch.ToLower()));
                 }
 
                 int total = await query.CountAsync();

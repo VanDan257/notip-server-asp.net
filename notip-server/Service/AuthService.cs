@@ -35,13 +35,13 @@ namespace notip_server.Service
             // 1. Validate the user exists
             if (await chatContext.Users.FirstOrDefaultAsync(x => x.Email == request.Email) is not User user)
             {
-                throw new ArgumentException("Email không tồn tại");
+                throw new Exception("Email không tồn tại");
             }
 
             // 2. Validate the password is correct
             if (!_passwordService.VerifyPassword(user.PasswordHash, user.PasswordSalt, request.Password))
             {
-                throw new Exception("Invalid password.");
+                throw new Exception("Mật khẩu không chính xác.");
             }
 
             user.LastLogin = DateTime.Now;
@@ -85,7 +85,7 @@ namespace notip_server.Service
         public async Task SignUp(SignUpRequest request)
         {
             if (await chatContext.Users.AnyAsync(x => x.Email.Equals(request.Email)))
-                throw new ArgumentException("Tài khoản đã tồn tại");
+                throw new Exception("Email đã tồn tại");
 
             var saltPassword = _passwordService.GenerateSalt();
             var hashPassword = _passwordService.HashPassword(request.Password, saltPassword);

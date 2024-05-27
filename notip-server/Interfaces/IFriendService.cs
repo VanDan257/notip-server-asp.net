@@ -1,15 +1,23 @@
-﻿namespace notip_server.Interfaces
+﻿using notip_server.ViewModel.Common;
+using notip_server.ViewModel.Friend;
+using notip_server.ViewModel.User;
+
+namespace notip_server.Interfaces
 {
     public interface IFriendService
     {
+        Task<PagingResult<FriendResponse>> GetListFriend(string userSession, GetContactRequest request);
+
+        Task<PagingResult<FriendResponse>> GetListFriendInvite(string userSession, GetContactRequest request);
+
         Task SendFriendRequest(string userSession, string receiverCode);
 
-        Task AcceptFriendRequest(int requestId);
+        Task AcceptFriendRequest(string userSession, string receiverCode);
 
-        Task CancelFriendRequest(int requestId);
+        Task CancelFriendRequest(string userSession, string receiverCode);
 
         Task BlockUser(string userSession, string receiverCode);
 
-        Task UnBlockUser(int requestId);
+        Task UnBlockUser(string userSession, string receiverCode);
     }
 }

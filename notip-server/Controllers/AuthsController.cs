@@ -41,7 +41,7 @@ namespace notip_server.Controllers
             catch (Exception ex)
             {
                 responseAPI.Message = ex.Message;
-                return BadRequest(ex.Message);
+                return BadRequest(responseAPI);
             }
         }
 
@@ -103,7 +103,6 @@ namespace notip_server.Controllers
             {
                 responseAPI.Message = ex.Message;
                 return BadRequest(responseAPI);
-                
             }
         }
     }

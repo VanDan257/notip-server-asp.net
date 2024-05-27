@@ -2,7 +2,7 @@
 {
     public class PagingResult<T>
     {
-        public PagingResult(List<T>? items, int pageIndex, int pageSize, int totalRecords, int totalPages)
+        public PagingResult(List<T>? items, int pageIndex, int pageSize, int totalRecords, int totalPage)
         {
             Items = items;
 
@@ -12,7 +12,7 @@
 
             TotalRecords = totalRecords;
 
-            TotalPages = totalPages;
+            TotalPage = totalPage;
         }
 
         //public PagingResult(List<T>? items, int pageIndex, int pageSize, string? sortBy, string? orderBy, int totalRecords, int totalPages)
@@ -44,6 +44,6 @@
 
         public int TotalRecords { get; set; }
 
-        public int TotalPages { get; set; }
+        public int TotalPage { get; set; }
     }
 }

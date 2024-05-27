@@ -39,7 +39,7 @@ namespace notip_server.ViewModel.Friend
         public bool IsBeenSentFriend { get; set; }
 
         /// <summary>
-        /// Chặn tin nhắn và cuộc gọi nười dùng hiện tại
+        /// Chặn tin nhắn và cuộc gọi người dùng hiện tại
         /// </summary>
         public bool IsBlocked { get; set; }
 
