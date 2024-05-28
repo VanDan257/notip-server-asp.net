@@ -8,11 +8,11 @@ namespace notip_server.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<User> builder)
         {
-            builder.HasKey(e => e.Code);
+            builder.HasKey(e => e.Id);
 
             builder.ToTable("User");
 
-            builder.Property(e => e.Code)
+            builder.Property(e => e.Id)
                 .HasMaxLength(32)
                 .IsUnicode(false);
             builder.Property(e => e.Address).HasMaxLength(255);
@@ -26,7 +26,7 @@ namespace notip_server.Data.Configurations
             builder.Property(e => e.Email)
                 .HasMaxLength(50)
                 .IsUnicode(false);
-            builder.Property(e => e.FullName).HasMaxLength(50);
+            builder.Property(e => e.UserName).HasMaxLength(50);
             builder.Property(e => e.Gender).HasMaxLength(10);
             builder.Property(e => e.LastLogin).HasColumnType("datetime");
             builder.Property(e => e.PasswordHash)
@@ -35,7 +35,7 @@ namespace notip_server.Data.Configurations
             builder.Property(e => e.PasswordSalt)
                 .HasMaxLength(255)
                 .IsUnicode(false);
-            builder.Property(e => e.Phone)
+            builder.Property(e => e.PhoneNumber)
                 .HasMaxLength(50)
                 .IsUnicode(false);
         }

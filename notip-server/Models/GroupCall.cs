@@ -16,7 +16,7 @@
 
         public DateTime Created { get; set; }
 
-        public string CreatedBy { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public DateTime LastActive { get; set; }
 

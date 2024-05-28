@@ -2,7 +2,11 @@
 {
     public class Group
     {
-        public string Code { get; set; }
+        public Group()
+        {
+            Code = Guid.NewGuid();
+        }
+        public Guid Code { get; set; }
 
         /// <summary>
         /// single: chat 1-1
@@ -16,7 +20,7 @@
 
         public DateTime Created { get; set; }
 
-        public string CreatedBy { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public DateTime LastActive { get; set; }
 

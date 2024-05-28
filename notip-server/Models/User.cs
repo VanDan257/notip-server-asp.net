@@ -1,20 +1,12 @@
-﻿namespace notip_server.Models
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace notip_server.Models
 {
-    public class User
+    public class User : IdentityUser<Guid>
     {
-        public string Code { get; set; }
-
-        public string PasswordHash { get; set; }
-
         public string PasswordSalt { get; set; }
 
-        public string FullName { get; set; }
-
         public string? Dob { get; set; }
-
-        public string? Phone { get; set; }
-
-        public string Email { get; set; }
 
         public string? Address { get; set; }
 

@@ -5,7 +5,7 @@ namespace notip_server.Dto
 {
     public class GroupDto
     {
-        public string Code { get; set; }
+        public Guid Code { get; set; }
 
         public string Type { get; set; }
 
@@ -15,7 +15,7 @@ namespace notip_server.Dto
 
         public DateTime Created { get; set; }
 
-        public string CreatedBy { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public DateTime LastActive { get; set; }
 

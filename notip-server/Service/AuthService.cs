@@ -57,8 +57,8 @@ namespace notip_server.Service
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Sid, user.Code),
-                    new Claim(ClaimTypes.Name, user.FullName),
+                    new Claim(ClaimTypes.Sid, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName),
                     new Claim(ClaimTypes.Expiration, expiresAt.ToString())
 
                 }),
@@ -70,8 +70,8 @@ namespace notip_server.Service
 
             return new AccessToken
             {
-                User = user.Code,
-                FullName = user.FullName,
+                Id = user.Id,
+                UserName = user.UserName,
                 Avatar = user.Avatar,
                 Token = jwtTokenHandler.WriteToken(token),
 
@@ -92,10 +92,9 @@ namespace notip_server.Service
 
             User newUser = new User()
             {
-                Code = Guid.NewGuid().ToString("N"),
-                FullName = request.FullName,
+                UserName = request.UserName,
                 Email = request.Email,
-                Phone = request.Phone,
+                PhoneNumber = request.Phone,
                 PasswordSalt = saltPassword,
                 PasswordHash = hashPassword,
                 Avatar = Constants.AVATAR_DEFAULT,
@@ -103,23 +102,6 @@ namespace notip_server.Service
 
             await chatContext.Users.AddAsync(newUser);
             await chatContext.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// Cập nhật thông tin hubconnection. Sử dụng khi thông báo riêng cho từng cá nhân.
-        /// </summary>
-        /// <param name="userSession">User hiện tại đang đăng nhập</param>
-        /// <param name="key">HubConnection</param>
-        public async Task PutHubConnection(string userSession, string key)
-        {
-            User user = await chatContext.Users
-                .FirstOrDefaultAsync(x => x.Code.Equals(userSession));
-
-            if (user != null)
-            {
-                user.CurrentSession = key;
-                await chatContext.SaveChangesAsync();
-            }
         }
     }
 }

@@ -4,11 +4,11 @@ namespace notip_server.Interfaces
 {
     public interface ICallService
     {
-        Task<List<GroupCallDto>> GetCallHistory(string userSession);
-        Task<List<CallDto>> GetHistoryById(string userSession, string groupCallCode);
-        Task<string> Call(string userSession, string callTo);
-        Task JoinVideoCall(string userSession, string url);
-        Task CancelVideoCall(string userSession, string url);
+        Task<List<GroupCallDto>> GetCallHistory(Guid userSession);
+        Task<List<CallDto>> GetHistoryById(Guid userSession, Guid groupCallCode);
+        Task<string> Call(Guid userSession, Guid callTo);
+        Task JoinVideoCall(Guid userSession, string url);
+        Task CancelVideoCall(Guid userSession, string url);
 
     }
 }

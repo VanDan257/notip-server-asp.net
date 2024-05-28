@@ -8,7 +8,7 @@ namespace notip_server.Dto
 
         public string Type { get; set; }
 
-        public string GroupCode { get; set; }
+        public Guid GroupCode { get; set; }
 
         public string Content { get; set; }
 
@@ -16,7 +16,7 @@ namespace notip_server.Dto
 
         public DateTime Created { get; set; }
 
-        public string CreatedBy { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public string SendTo { get; set; }
 

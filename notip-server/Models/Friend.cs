@@ -4,8 +4,8 @@
     {
         #region property
         public int Id { get; set; }
-        public string SenderCode { get; set; }
-        public string ReceiverCode { get; set; }
+        public Guid SenderCode { get; set; }
+        public Guid ReceiverCode { get; set; }
         public string Status { get; set; }
 
         #endregion

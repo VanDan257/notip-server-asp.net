@@ -7,6 +7,6 @@ namespace notip_server.ViewModel.Friend
 {
     public class FriendRequest
     {
-        public string UserCode { get; set; }
+        public Guid UserCode { get; set; }
     }
 }

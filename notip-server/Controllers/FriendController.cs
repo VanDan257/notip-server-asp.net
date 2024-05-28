@@ -12,12 +12,12 @@ namespace notip_server.Controllers
     public class FriendController : ControllerBase
     {
         private readonly IFriendService friendService;
-        private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IUserService _userService;
 
-        public FriendController(IFriendService friendService, IHttpContextAccessor contextAccessor)
+        public FriendController(IFriendService friendService, IHttpContextAccessor contextAccessor, IUserService userService)
         {
             this.friendService = friendService;
-            _contextAccessor = contextAccessor;
+            _userService = userService;
         }
 
         [HttpGet("get-list-friend")]
@@ -27,8 +27,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await friendService.GetListFriend(userSession, request);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await friendService.GetListFriend(userSession.Id, request);
 
                 return Ok(responseAPI);
             }
@@ -46,8 +46,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await friendService.GetListFriendInvite(userSession, request);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await friendService.GetListFriendInvite(userSession.Id, request);
 
                 return Ok(responseAPI);
             }
@@ -66,8 +66,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.SendFriendRequest(userSession, receiver.UserCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await friendService.SendFriendRequest(userSession.Id, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -86,8 +86,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.AcceptFriendRequest(userSession, receiver.UserCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await friendService.AcceptFriendRequest(userSession.Id, receiver.UserCode);
 
                 return Ok();
             }
@@ -106,8 +106,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.CancelFriendRequest(userSession, receiver.UserCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await friendService.CancelFriendRequest(userSession.Id, receiver.UserCode);
 
                 return Ok();
             }
@@ -126,8 +126,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.BlockUser(userSession, receiver.UserCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await friendService.BlockUser(userSession.Id, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -146,8 +146,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await friendService.UnBlockUser(userSession, receiver.UserCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await friendService.UnBlockUser(userSession.Id, receiver.UserCode);
 
                 return Ok();
             }

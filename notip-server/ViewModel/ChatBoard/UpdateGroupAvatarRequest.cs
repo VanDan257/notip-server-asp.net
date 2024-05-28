@@ -2,7 +2,7 @@
 {
     public class UpdateGroupAvatarRequest
     {
-        public string Code { get; set; }
+        public Guid Code { get; set; }
         public List<IFormFile> Image{ get; set; }
     }
 }

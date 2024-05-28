@@ -13,7 +13,7 @@ namespace notip_server.Models
         /// </summary>
         public string Type { get; set; }
 
-        public string GroupCode { get; set; }
+        public Guid GroupCode { get; set; }
 
         public string Content { get; set; }
 
@@ -21,7 +21,7 @@ namespace notip_server.Models
 
         public DateTime Created { get; set; }
 
-        public string CreatedBy { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public virtual User UserCreatedBy { get; set; }
         [ForeignKey("CreatedBy")]

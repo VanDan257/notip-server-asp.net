@@ -6,18 +6,18 @@ namespace notip_server.Interfaces
 {
     public interface IFriendService
     {
-        Task<PagingResult<FriendResponse>> GetListFriend(string userSession, GetContactRequest request);
+        Task<PagingResult<FriendResponse>> GetListFriend(Guid userSession, GetContactRequest request);
 
-        Task<PagingResult<FriendResponse>> GetListFriendInvite(string userSession, GetContactRequest request);
+        Task<PagingResult<FriendResponse>> GetListFriendInvite(Guid userSession, GetContactRequest request);
 
-        Task SendFriendRequest(string userSession, string receiverCode);
+        Task SendFriendRequest(Guid userSession, Guid receiverCode);
 
-        Task AcceptFriendRequest(string userSession, string receiverCode);
+        Task AcceptFriendRequest(Guid userSession, Guid receiverCode);
 
-        Task CancelFriendRequest(string userSession, string receiverCode);
+        Task CancelFriendRequest(Guid userSession, Guid receiverCode);
 
-        Task BlockUser(string userSession, string receiverCode);
+        Task BlockUser(Guid userSession, Guid receiverCode);
 
-        Task UnBlockUser(string userSession, string receiverCode);
+        Task UnBlockUser(Guid userSession, Guid receiverCode);
     }
 }

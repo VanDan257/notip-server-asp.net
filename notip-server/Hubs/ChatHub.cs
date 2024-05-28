@@ -12,7 +12,7 @@ namespace notip_server.Hubs
     public class ChatHub : Hub
     {
         //              <userCode, ConnectionId>
-        private Dictionary<string, string> users = new Dictionary<string, string>();
+        private Dictionary<Guid, string> users = new Dictionary<Guid, string>();
 
         public string GetConnectionId()
         {
@@ -22,9 +22,10 @@ namespace notip_server.Hubs
         public override Task OnConnectedAsync()
         {
             var httpContext = Context.GetHttpContext();
-            var userCode = httpContext.Request.Query["userCode"].ToString();
+            var param = httpContext.Request.Query["userCode"].ToString();
+            Guid.TryParse(param, out var userCode);
 
-            if (!string.IsNullOrEmpty(userCode) && !users.ContainsKey(userCode))
+            if (!string.IsNullOrEmpty(userCode.ToString()) && !users.ContainsKey(userCode))
             {
                 users.Add(userCode, Context.ConnectionId);
             }
@@ -45,7 +46,7 @@ namespace notip_server.Hubs
         /// <param name="message">Tin nhắn</param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task SendMessage(List<string> receiverIds, string payload)
+        public async Task SendMessage(List<Guid> receiverIds, string payload)
         {
             try
             {
@@ -86,7 +87,7 @@ namespace notip_server.Hubs
         /// </summary>
         /// <param name="dictionary"></param>
         /// <param name="value"></param>
-        private static void RemoveByValue(Dictionary<string, string> dictionary, string value)
+        private static void RemoveByValue(Dictionary<Guid, string> dictionary, string value)
         {
             // Tìm tất cả các key có giá trị tương ứng cần xóa
             var keysToRemove = dictionary.Where(kvp => kvp.Value == value).Select(kvp => kvp.Key).ToList();

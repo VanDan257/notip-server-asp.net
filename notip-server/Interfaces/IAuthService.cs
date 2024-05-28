@@ -8,6 +8,5 @@ namespace notip_server.Interfaces
     {
         Task<AccessToken> Login(LoginRequest request);
         Task SignUp(SignUpRequest request);
-        Task PutHubConnection(string userSession, string key);
     }
 }

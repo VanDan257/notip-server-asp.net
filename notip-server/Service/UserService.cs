@@ -9,16 +9,20 @@ using System.Net.WebSockets;
 using notip_server.Utils;
 using notip_server.ViewModel.Friend;
 using notip_server.ViewModel.Common;
+using Microsoft.AspNetCore.Identity;
 
 namespace notip_server.Service
 {
     public class UserService : IUserService
     {
+        private readonly UserManager<User> _userManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DbChatContext chatContext;
-        //protected readonly IWebHostEnvironment webHostEnvironment;
-        public UserService(DbChatContext chatContext)
+        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor)
         {
             this.chatContext = chatContext;
+            _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
             //this.webHostEnvironment = webHostEnvironment;
         }
 
@@ -27,23 +31,22 @@ namespace notip_server.Service
         /// </summary>
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <returns>Thông tin user</returns>
-        public async Task<UserDto> GetProfile(string userCode)
+        public async Task<UserDto> GetProfile(Guid userCode)
         {
             return await chatContext.Users
-                    .Where(x => x.Code.Equals(userCode))
+                    .Where(x => x.Id.Equals(userCode))
                     .Select(x => new UserDto()
                     {
-                        Code = x.Code,
-                        FullName = x.FullName,
+                        Id = x.Id,
+                        UserName = x.UserName,
                         Address = x.Address,
                         Avatar = x.Avatar,
                         Email = x.Email,
                         Gender = x.Gender,
-                        Phone = x.Phone,
+                        PhoneNumber = x.PhoneNumber,
                         Dob = x.Dob
                     }).FirstOrDefaultAsync();
         }
-
 
         /// <summary>
         /// Cập nhật thông tin cá nhân
@@ -51,17 +54,17 @@ namespace notip_server.Service
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="user">Thông tin user</param>
         /// <returns></returns>
-        public async Task<UserDto> UpdateProfile(string userCode, UpdateProfileRequest request)
+        public async Task<UserDto> UpdateProfile(Guid userCode, UpdateProfileRequest request)
         {
             User us = await chatContext.Users
-                    .FirstOrDefaultAsync(x => x.Code.Equals(userCode));
+                    .FirstOrDefaultAsync(x => x.Id.Equals(userCode));
             
             if (us != null)
             {
-                us.FullName = request.FullName;
+                us.UserName = request.UserName;
                 us.Dob = request.Dob;
                 us.Address = request.Address;
-                us.Phone = request.Phone;
+                us.PhoneNumber = request.PhoneNumber;
                 us.Gender = request.Gender;
 
                 await chatContext.SaveChangesAsync();
@@ -69,10 +72,10 @@ namespace notip_server.Service
 
             return new UserDto
             {
-                Code = us.Code,
-                FullName = us.FullName,
+                Id = us.Id,   
+                UserName = us.UserName,
                 Dob = us.Dob,
-                Phone = us.Phone,
+                PhoneNumber = us.PhoneNumber,
                 Gender = us.Gender,
                 Email = us.Email,
                 Address = us.Address,
@@ -80,44 +83,25 @@ namespace notip_server.Service
             };
         }
 
-
-        /// <summary>
-        /// Thêm mới liên hệ
-        /// </summary>
-        /// <param name="userCode">User hiện tại đang đăng nhập</param>
-        /// <param name="user">Thông tin liên hệ</param>
-        public async Task AddContact(string userCode, UserDto user)
-        {
-            Contact contact = new Contact()
-            {
-                UserCode = userCode,
-                ContactCode = user.Code,
-                Created = DateTime.Now
-            };
-            await chatContext.Contacts.AddAsync(contact);
-
-            await chatContext.SaveChangesAsync();
-        }
-
         /// <summary>
         /// Lấy thông tin người dùng theo code
         /// </summary>
         /// <param name="userCode"></param>
         /// <returns></returns>
-        public async Task<PagingResult<FriendResponse>> GetContact(string userSession, GetContactRequest request)
+        public async Task<PagingResult<FriendResponse>> GetContact(Guid userSession, GetContactRequest request)
         {
             try
             {
                 var query = chatContext.Users.AsQueryable();
 
-                if (!string.IsNullOrEmpty(request.UserCode))
+                if (!string.IsNullOrEmpty(request.UserCode.ToString()))
                 {
-                    query = query.Where(x => x.Code == request.UserCode);
+                    query = query.Where(x => x.Id == request.UserCode);
                 }
                 else if (!string.IsNullOrEmpty(request.KeySearch))
                 {
-                    query = query.Where(x => x.Code != userSession)
-                                 .Where(x => x.FullName.ToLower().Contains(request.KeySearch.ToLower()));
+                    query = query.Where(x => x.Id != userSession)
+                                 .Where(x => x.UserName.ToLower().Contains(request.KeySearch.ToLower()));
                 }
 
                 int total = await query.CountAsync();
@@ -133,13 +117,13 @@ namespace notip_server.Service
                     .Select(x => new FriendResponse()
                     {
                         Avatar = x.Avatar,
-                        Code = x.Code,
-                        FullName = x.FullName,
+                        Id = x.Id,
+                        UserName = x.UserName,
                         Address = x.Address,
                         Dob = x.Dob,
                         Email = x.Email,
                         Gender = x.Gender,
-                        Phone = x.Phone
+                        PhoneNumber = x.PhoneNumber
                     })
                     .ToListAsync();
 
@@ -147,7 +131,7 @@ namespace notip_server.Service
                 {
                     foreach(var user in users)
                     {
-                        var friend = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == userSession && x.ReceiverCode == user.Code);
+                        var friend = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == userSession && x.ReceiverCode == user.Id);
                         if(friend != null)
                         {
                             switch (friend.Status)
@@ -167,7 +151,7 @@ namespace notip_server.Service
                         }
                         else
                         {
-                            var friend1 = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == user.Code && x.ReceiverCode == userSession);
+                            var friend1 = await chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == user.Id && x.ReceiverCode == userSession);
                             if (friend1 != null)
                             {
                                 switch (friend1.Status)
@@ -200,5 +184,12 @@ namespace notip_server.Service
                 throw new Exception(ex.Message);
             }
         }
+
+
+        public async Task<User?> GetCurrentUserAsync()
+        {
+            return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+        }
+
     }
 }

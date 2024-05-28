@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using notip_server.Data.Configurations;
 using notip_server.Models;
 
@@ -23,6 +24,10 @@ namespace notip_server.Data
         public DbSet<User> Users { get; set; }
 
         public DbSet<Friend> Friends { get; set; }
+
+        //public DbSet<Role> Roles { get; set; }
+
+        //public DbSet<UserRole> UserRoles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +56,16 @@ namespace notip_server.Data
 
             //flutent api cho table Friend
             modelBuilder.ApplyConfiguration(new FriendConfiguration());
+
+            //modelBuilder.ApplyConfiguration(new RoleConfiguration());
+
+            //modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
+            //Entity
+            modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+            modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+            modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+            modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+            modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
         }
     }
 }

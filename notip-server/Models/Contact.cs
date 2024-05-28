@@ -4,7 +4,7 @@
     {
         public long Id { get; set; }
 
-        public string UserCode { get; set; }
+        public Guid UserCode { get; set; }
 
         public string ContactCode { get; set; }
 

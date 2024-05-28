@@ -24,21 +24,21 @@ namespace notip_server.Service
         /// <param name="userSession"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<PagingResult<FriendResponse>> GetListFriend(string userSession, GetContactRequest request)
+        public async Task<PagingResult<FriendResponse>> GetListFriend(Guid userSession, GetContactRequest request)
         {
             var query = from user in _chatContext.Users
                         join friend in _chatContext.Friends
-                        on new { Code = user.Code } equals new { Code = friend.SenderCode } into friendsGroup
+                        on new { Code = user.Id } equals new { Code = friend.SenderCode } into friendsGroup
                         from friend in friendsGroup.DefaultIfEmpty()
-                        where (user.Code == friend.SenderCode || user.Code == friend.ReceiverCode)
+                        where (user.Id == friend.SenderCode || user.Id == friend.ReceiverCode)
                                 && friend.Status == Constants.FriendStatus.FRIEND
                         select new FriendResponse
                         {
-                            Code = user.Code,
-                            FullName = user.FullName,
+                            Id = user.Id,
+                            UserName = user.UserName,
                             Dob = user.Dob,
-                            Phone = user.Phone,
-                            Email = user.Code,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
                             Address = user.Address,
                             Avatar = user.Avatar,
                             IsFriend = true
@@ -53,7 +53,7 @@ namespace notip_server.Service
             var friends = await query
                 .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                 .Take(request.PageSize.Value)
-                .OrderBy(x => x.FullName)
+                .OrderBy(x => x.UserName)
             .ToListAsync();
 
             return new PagingResult<FriendResponse>(friends, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
@@ -65,20 +65,20 @@ namespace notip_server.Service
         /// <param name="userSession"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<PagingResult<FriendResponse>> GetListFriendInvite(string userSession, GetContactRequest request)
+        public async Task<PagingResult<FriendResponse>> GetListFriendInvite(Guid userSession, GetContactRequest request)
         {
             var query = from user in _chatContext.Users
                         join friend in _chatContext.Friends
-                        on user.Code equals friend.SenderCode
+                        on user.Id equals friend.SenderCode
                         where friend.ReceiverCode == userSession
                                 && friend.Status == Constants.FriendStatus.FRIENDREQUEST
                         select new FriendResponse
                         {
-                            Code = user.Code,
-                            FullName = user.FullName,
+                            Id = user.Id,
+                            UserName = user.UserName,
                             Dob = user.Dob,
-                            Phone = user.Phone,
-                            Email = user.Code,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
                             Address = user.Address,
                             Avatar = user.Avatar,
                             IsBeenSentFriend = true
@@ -93,7 +93,7 @@ namespace notip_server.Service
             var friends = await query
                 .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                 .Take(request.PageSize.Value)
-                .OrderBy(x => x.FullName)
+                .OrderBy(x => x.UserName)
             .ToListAsync();
 
             return new PagingResult<FriendResponse>(friends, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
@@ -106,11 +106,11 @@ namespace notip_server.Service
         /// <param name="receiverCode"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task SendFriendRequest(string userSession, string receiverCode)
+        public async Task SendFriendRequest(Guid userSession, Guid receiverCode)
         {
             try
             {
-                var receiver = await _chatContext.Users.FirstOrDefaultAsync(x => x.Code == receiverCode);
+                var receiver = await _chatContext.Users.FirstOrDefaultAsync(x => x.Id == receiverCode);
 
                 if(receiver != null)
                 {
@@ -140,7 +140,7 @@ namespace notip_server.Service
         /// <param name="requestId"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task AcceptFriendRequest(string userSession, string receiverCode)
+        public async Task AcceptFriendRequest(Guid userSession, Guid receiverCode)
         {
             try
             {
@@ -181,7 +181,7 @@ namespace notip_server.Service
         /// <param name="requestId"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task CancelFriendRequest(string userSession, string receiverCode)
+        public async Task CancelFriendRequest(Guid userSession, Guid receiverCode)
         {
             try
             {
@@ -220,11 +220,11 @@ namespace notip_server.Service
         /// <param name="receiverCode"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task BlockUser(string userSession, string receiverCode)
+        public async Task BlockUser(Guid userSession, Guid receiverCode)
         {
             try
             {
-                var receiver = await _chatContext.Users.FirstOrDefaultAsync(x => x.Code == receiverCode);
+                var receiver = await _chatContext.Users.FirstOrDefaultAsync(x => x.Id == receiverCode);
 
                 if (receiver != null)
                 {
@@ -254,7 +254,7 @@ namespace notip_server.Service
         /// <param name="requestId"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task UnBlockUser(string userSession, string receiverCode)
+        public async Task UnBlockUser(Guid userSession, Guid receiverCode)
         {
             try
             {

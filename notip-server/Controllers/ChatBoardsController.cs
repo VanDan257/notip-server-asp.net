@@ -11,13 +11,15 @@ namespace notip_server.Controllers
     [ApiController]
     public class ChatBoardsController : ControllerBase
     {
+        private readonly IUserService _userService;
         private IChatBoardService _chatBoardService;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor)
+        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor, IUserService userService)
         {
             _chatBoardService = chatBoardService;
             _contextAccessor = contextAccessor;
+            _userService = userService;
         }
 
         [Route("get-history")]
@@ -28,8 +30,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.GetHistory(userSession);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await _chatBoardService.GetHistory(userSession.Id);
 
                 return Ok(responseAPI);
             }
@@ -47,8 +49,8 @@ namespace notip_server.Controllers
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.SearchChatGroup(userSession, keySearch);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await _chatBoardService.SearchChatGroup(userSession.Id, keySearch);
 
                 return Ok(responseAPI);
             }
@@ -61,13 +63,13 @@ namespace notip_server.Controllers
         
         [Route("access-group")]
         [HttpGet]
-        public async Task<IActionResult> AccessChatGroup(string groupCode)
+        public async Task<IActionResult> AccessChatGroup(Guid groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.AccessChatGroup(userSession, groupCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await _chatBoardService.AccessChatGroup(userSession.Id, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -80,14 +82,14 @@ namespace notip_server.Controllers
 
         [Route("get-info")]
         [HttpGet]
-        public async Task<IActionResult> GetInfo(string groupCode)
+        public async Task<IActionResult> GetInfo(Guid groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.GetInfo(userSession, groupCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await _chatBoardService.GetInfo(userSession.Id, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -107,8 +109,8 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await _chatBoardService.AddGroup(userSession, request);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await _chatBoardService.AddGroup(userSession.Id, request);
 
                 return Ok(responseAPI);
             }
@@ -139,14 +141,14 @@ namespace notip_server.Controllers
 
         [Route("out-group")]
         [HttpDelete]
-        public async Task<IActionResult> OutGroup(string groupCode)
+        public async Task<IActionResult> OutGroup(Guid groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await _chatBoardService.OutGroup(userSession, groupCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await _chatBoardService.OutGroup(userSession.Id, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -196,7 +198,7 @@ namespace notip_server.Controllers
 
         [Route("send-message")]
         [HttpPost]
-        public async Task<IActionResult> SendMessage([FromQuery] string groupCode)
+        public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
@@ -212,8 +214,8 @@ namespace notip_server.Controllers
                 MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
                 message.Attachments = Request.Form.Files.ToList();
 
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await _chatBoardService.SendMessage(userSession, groupCode, message);
+                var userSession = await _userService.GetCurrentUserAsync();
+                await _chatBoardService.SendMessage(userSession.Id, groupCode, message);
 
                 return Ok(responseAPI);
             }
@@ -226,35 +228,14 @@ namespace notip_server.Controllers
 
         [Route("get-message-by-group/{groupCode}")]
         [HttpGet]
-        public async Task<IActionResult> GetMessageByGroup(string groupCode)
+        public async Task<IActionResult> GetMessageByGroup(Guid groupCode)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userSession, groupCode);
-
-                return Ok(responseAPI);
-            }
-            catch (Exception ex)
-            {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
-            }
-        }
-
-
-        [Route("get-message-by-contact/{contactCode}")]
-        [HttpGet]
-        public async Task<IActionResult> GetMessageByContact(string contactCode)
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
-
-            try
-            {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                responseAPI.Data = await _chatBoardService.GetMessageByContact(userSession, contactCode);
+                var userSession = await _userService.GetCurrentUserAsync();
+                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userSession.Id, groupCode);
 
                 return Ok(responseAPI);
             }

@@ -63,6 +63,8 @@ namespace notip_server.Controllers
             }
         }
 
+        //[HttpPost("admin/auths/login")]
+
         [HttpGet("file")]
         public async Task<IActionResult> DownloadFile(string path)
         {
@@ -78,26 +80,6 @@ namespace notip_server.Controllers
                 var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
 
                 return File(fileStream, "application/octet-stream", fileName[fileName.Length - 1]);
-            }
-            catch (Exception ex)
-            {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
-            }
-        }
-
-        [Route("post-hubconnection")]
-        [HttpPost]
-        public async Task<IActionResult> PutHubConnection(string key)
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
-
-            try
-            {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                await _authService.PutHubConnection(userSession, key);
-
-                return Ok(responseAPI);
             }
             catch (Exception ex)
             {

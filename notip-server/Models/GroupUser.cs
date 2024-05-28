@@ -4,9 +4,9 @@
     {
         public long Id { get; set; }
 
-        public string GroupCode { get; set; }
+        public Guid GroupCode { get; set; }
 
-        public string UserCode { get; set; }
+        public Guid UserCode { get; set; }
 
         public virtual Group Group { get; set; }
 

@@ -6,7 +6,7 @@
 
         public string GroupCallCode { get; set; }
 
-        public string UserCode { get; set; }
+        public Guid UserCode { get; set; }
 
         public string Url { get; set; }
 
