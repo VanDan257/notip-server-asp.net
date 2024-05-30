@@ -1,17 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using notip_server.Data.Configurations;
 using notip_server.Models;
 
 namespace notip_server.Data
 {
-    public class DbChatContext : DbContext
+    public class DbChatContext : IdentityDbContext<User, Role, Guid>
     {
         public DbChatContext(DbContextOptions<DbChatContext> options) : base(options) { }
 
         public DbSet<Call> Calls { get; set; }
-
-        public DbSet<Contact> Contacts { get; set; }
 
         public DbSet<Group> Groups { get; set; }
 
@@ -25,19 +24,12 @@ namespace notip_server.Data
 
         public DbSet<Friend> Friends { get; set; }
 
-        //public DbSet<Role> Roles { get; set; }
-
-        //public DbSet<UserRole> UserRoles { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             //flutent api cho table Call
             modelBuilder.ApplyConfiguration(new CallConfiguration());
-
-            //flutent api cho table Contact
-            modelBuilder.ApplyConfiguration(new ContactConfiguration());
 
             //flutent api cho table Group
             modelBuilder.ApplyConfiguration(new GroupConfiguration());

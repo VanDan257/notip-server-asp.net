@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
 
-        public string GroupCallCode { get; set; }
+        public Guid GroupCallCode { get; set; }
 
         public Guid UserCode { get; set; }
 

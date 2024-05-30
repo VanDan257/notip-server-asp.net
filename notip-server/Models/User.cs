@@ -20,9 +20,9 @@ namespace notip_server.Models
 
         public virtual ICollection<Call> Calls { get; set; }
 
-        public virtual ICollection<Contact> Contacts { get; set; }
+        //public virtual ICollection<Contact> Contacts { get; set; }
 
-        public virtual ICollection<Contact> ContactUsers { get; set; }
+        //public virtual ICollection<Contact> ContactUsers { get; set; }
 
         public virtual ICollection<GroupUser> GroupUsers { get; set; }
 

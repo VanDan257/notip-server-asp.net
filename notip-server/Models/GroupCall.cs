@@ -2,7 +2,7 @@
 {
     public class GroupCall
     {
-        public string Code { get; set; }
+        public Guid Code { get; set; }
 
         /// <summary>
         /// single: chat 1-1

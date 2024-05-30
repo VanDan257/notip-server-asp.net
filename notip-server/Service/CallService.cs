@@ -130,7 +130,7 @@ namespace notip_server.Service
             #endregion
 
             // Lấy thông tin lịch sử cuộc gọi đã gọi cho user
-            string grpCallCode = await chatContext.GroupCalls
+            Guid grpCallCode = await chatContext.GroupCalls
                        .Where(x => x.Type.Equals(Constants.GroupType.SINGLE))
                        .Where(x => x.Calls.Any(y => y.UserCode.Equals(userSession) &&
                                    x.Calls.Any(y => y.UserCode.Equals(callTo))))
@@ -147,7 +147,7 @@ namespace notip_server.Service
             {
                 groupCall = new GroupCall()
                 {
-                    Code = Guid.NewGuid().ToString("N"),
+                    Code = Guid.NewGuid(),
                     Created = dateNow,
                     CreatedBy = userSession,
                     Type = Constants.GroupType.SINGLE,
