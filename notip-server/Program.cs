@@ -33,11 +33,11 @@ builder.Services.AddSingleton<ChatHub>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 
 #region EntityFramework Core
-//builder.Services.AddDbContext<DbChatContext>(option =>
-//{
-//    option.UseLazyLoadingProxies().UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString))
-//    .LogTo(Console.WriteLine, LogLevel.Information);
-//});
+builder.Services.AddDbContext<DbChatContext>(option =>
+{
+    option.UseLazyLoadingProxies().UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString))
+    .LogTo(Console.WriteLine, LogLevel.Information);
+});
 
 builder.Services.AddDbContext<DbChatContext>(opt =>
 {

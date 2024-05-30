@@ -12,7 +12,7 @@ using notip_server.Data;
 namespace notip_server.Migrations
 {
     [DbContext(typeof(DbChatContext))]
-    [Migration("20240530002430_InitialDb")]
+    [Migration("20240530132402_InitialDb")]
     partial class InitialDb
     {
         /// <inheritdoc />
@@ -24,9 +24,9 @@ namespace notip_server.Migrations
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true)
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
@@ -34,16 +34,16 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -58,16 +58,16 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClaimType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ClaimValue")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.HasKey("Id");
 
@@ -79,16 +79,16 @@ namespace notip_server.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("ProviderDisplayName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -100,10 +100,10 @@ namespace notip_server.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<Guid>("RoleId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -115,16 +115,16 @@ namespace notip_server.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Value")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.HasKey("UserId", "LoginProvider", "Name");
 
@@ -137,7 +137,7 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime");
@@ -145,7 +145,7 @@ namespace notip_server.Migrations
                     b.Property<Guid>("GroupCallCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -156,12 +156,12 @@ namespace notip_server.Migrations
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("varchar(500)");
 
                     b.Property<Guid>("UserCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.HasKey("Id");
 
@@ -178,22 +178,22 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid>("ReceiverCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<Guid>("SenderCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasColumnType("varchar(32)");
 
                     b.HasKey("Id");
 
@@ -206,11 +206,11 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("Avatar")
                         .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime");
@@ -218,14 +218,14 @@ namespace notip_server.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("datetime");
 
                     b.Property<string>("Name")
                         .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("varchar(250)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -245,12 +245,12 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("Avatar")
                         .IsRequired()
                         .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime");
@@ -258,7 +258,7 @@ namespace notip_server.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("datetime");
@@ -266,7 +266,7 @@ namespace notip_server.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("varchar(250)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -286,20 +286,20 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<Guid>("GroupCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<Guid>("UserCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.HasKey("Id");
 
@@ -316,11 +316,11 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Content")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime");
@@ -328,16 +328,16 @@ namespace notip_server.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<Guid>("GroupCode")
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<string>("Path")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -359,26 +359,25 @@ namespace notip_server.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("NormalizedName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
+                        .HasDatabaseName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles", (string)null);
                 });
@@ -389,22 +388,22 @@ namespace notip_server.Migrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(32)
                         .IsUnicode(false)
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("char(32)");
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
                     b.Property<string>("Address")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Avatar")
                         .IsUnicode(false)
-                        .HasColumnType("varchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("CurrentSession")
                         .HasMaxLength(500)
@@ -422,28 +421,28 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Gender")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("varchar(10)");
 
                     b.Property<DateTime?>("LastLogin")
                         .HasColumnType("datetime");
 
                     b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("PasswordHash")
                         .HasMaxLength(255)
@@ -462,17 +461,17 @@ namespace notip_server.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("Id");
 
@@ -481,8 +480,7 @@ namespace notip_server.Migrations
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
-                        .HasFilter("[NormalizedUserName] IS NOT NULL");
+                        .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("User", (string)null);
                 });
