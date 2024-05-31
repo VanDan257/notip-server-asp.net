@@ -28,6 +28,7 @@ namespace notip_server.Extensions
             services.AddScoped<IChatBoardService, ChatBoardService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IFriendService, FriendService>();
+            services.AddScoped<ICommonService, CommonService>();
             services.AddTransient<IPasswordService, PasswordService>();
 
             return services;

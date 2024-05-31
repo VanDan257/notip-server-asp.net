@@ -24,7 +24,8 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddApplicationServices()
-    .AddIdentityServices();
+    .AddIdentityServices()
+    .AddAwsS3Services(builder.Configuration);
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -43,27 +44,39 @@ builder.Services.AddDbContext<DbChatContext>(option =>
 
 #region Config Amazon S3
 
-//var s3Config = new AmazonS3Config
-//{
-//    ServiceURL = EnviConfig.ServiceURLAwsS3
-//};
+builder.Services.AddAWSService<IAmazonS3>(new AWSOptions
+{
+    // DefaultClientConfig = new AmazonS3Config
+    // {
+    //     ServiceURL = EnviConfig.ServiceURLAwsS3
+    // },
+    Credentials = new Amazon.Runtime.BasicAWSCredentials(
+        EnviConfig.AccessKeyAwsS3,
+        EnviConfig.SecretKeyAwsS3
+    )
+});
 
-//var awsOptions = new AWSOptions
-//{
+// var s3Config = new AmazonS3Config
+// {
+//    ServiceURL = EnviConfig.ServiceURLAwsS3
+// };
+
+// var awsOptions = new AWSOptions
+// {
 //    Credentials = new Amazon.Runtime.BasicAWSCredentials(
 //        EnviConfig.AccessKeyAwsS3,
 //        EnviConfig.SecretKeyAwsS3
 //    ),
 //    Region = RegionEndpoint.USEast1 // Thay đổi RegionEndpoint theo nhu cầu của bạn
-//};
+// };
 
-//awsOptions.DefaultClientConfig.ServiceURL = EnviConfig.ServiceURLAwsS3;
+// awsOptions.DefaultClientConfig.ServiceURL = EnviConfig.ServiceURLAwsS3;
 
-//builder.Services.AddDefaultAWSOptions(awsOptions);
-//builder.Services.AddAWSService<IAmazonS3>(new AWSOptions
-//{
+// builder.Services.AddDefaultAWSOptions(awsOptions);
+// builder.Services.AddAWSService<IAmazonS3>(new AWSOptions
+// {
 //    DefaultClientConfig = s3Config
-//});
+// });
 
 #endregion
 
@@ -81,7 +94,9 @@ app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors(policy);
+
 app.UseAuthorization();
+app.UseAuthentication();
 
 app.UseEndpoints(endpoints =>
 {

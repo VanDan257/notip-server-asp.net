@@ -9,4 +9,9 @@
         public string? Email { get; set; }
         public string? Address { get; set; }
     }
+
+    public class UpdateAvatarRequest
+    {
+        public List<IFormFile> Image{ get; set; }
+    }
 }

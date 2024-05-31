@@ -5,7 +5,7 @@ namespace notip_server.Dto
 {
     public class GroupDto
     {
-        public Guid Code { get; set; }
+        public Guid? Code { get; set; }
 
         public string Type { get; set; }
 

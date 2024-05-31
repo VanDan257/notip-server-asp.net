@@ -18,12 +18,13 @@ namespace notip_server.Service
         private readonly UserManager<User> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DbChatContext chatContext;
-        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor)
+        private readonly ICommonService _commonService;
+        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, ICommonService commonService)
         {
             this.chatContext = chatContext;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
-            //this.webHostEnvironment = webHostEnvironment;
+            _commonService = commonService;
         }
 
         /// <summary>
@@ -81,6 +82,25 @@ namespace notip_server.Service
                 Address = us.Address,
                 Avatar = us.Avatar,
             };
+        }
+
+        public async Task UpdateAvatar(Guid userSessionId, UpdateAvatarRequest request)
+        {
+            try
+            {
+                var user = await chatContext.Users.FirstOrDefaultAsync(x => x.Id == userSessionId);
+                if(user != null){
+                    string pathFile = "Avatar";
+                    await _commonService.UploadBlobFile(request.Image[0], pathFile);
+
+                    user.Avatar = $"{pathFile}/{request.Image[0].FileName}";
+                    chatContext.Users.Update(user);
+                    await chatContext.SaveChangesAsync();
+                }
+            }
+            catch(Exception ex){
+                throw new Exception("Có lỗi xảy ra! Hãy thử lại!");
+            }
         }
 
         /// <summary>
