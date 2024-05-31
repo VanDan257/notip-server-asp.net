@@ -32,8 +32,9 @@ namespace notip_server.Controllers
             try
             {
 
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _userService.GetProfile(userSession.Id);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _userService.GetProfile(userId);
 
                 return Ok(responseAPI);
             }
@@ -52,8 +53,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _userService.UpdateProfile(userSession.Id, request);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _userService.UpdateProfile(userId, request);
 
                 return Ok(responseAPI);
             }
@@ -70,8 +72,9 @@ namespace notip_server.Controllers
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                var user = await _userService.GetContact(userSession.Id, request);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                var user = await _userService.GetContact(userId, request);
                 responseAPI.Data = user;
 
                 return Ok(responseAPI);

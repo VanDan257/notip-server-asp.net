@@ -7,6 +7,10 @@
         public static string SecretKey { get; private set; }
         public static int ExpirationInMinutes { get; private set; }
         public static string DailyToken { get; private set; }
+        public static string ServiceURLAwsS3 { get; private set; }
+        public static string AccessKeyAwsS3 { get; private set; }
+        public static string SecretKeyAwsS3 { get; private set; }
+        public static string BucketNameAwsS3 { get; private set; }
 
         public static void Config(IConfiguration configuration)
         {
@@ -15,6 +19,10 @@
             SecretKey = configuration["JwtConfig:SecretKey"];
             ExpirationInMinutes = Convert.ToInt32(configuration["JwtConfig:ExpirationInMinutes"]);
             DailyToken = configuration["DailyToken"];
+            ServiceURLAwsS3 = configuration["AWS:ServiceURL"];
+            AccessKeyAwsS3 = configuration["AWS:AccessKey"];
+            SecretKeyAwsS3 = configuration["AWS:SecretKey"];
+            BucketNameAwsS3 = configuration["AWS:BucketName"];
         }
     }
 }

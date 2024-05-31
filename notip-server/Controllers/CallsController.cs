@@ -12,13 +12,11 @@ namespace notip_server.Controllers
     {
         private ICallService _callService;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly IUserService _userService;
 
-        public CallsController(ICallService callService, IHttpContextAccessor contextAccessor, IUserService userService)
+        public CallsController(ICallService callService, IHttpContextAccessor contextAccessor)
         {
             _callService = callService;
             _contextAccessor = contextAccessor;
-            _userService = userService;
         }
 
 
@@ -30,8 +28,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responeAPI.Data = await _callService.Call(userSession.Id, userCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responeAPI.Data = await _callService.Call(userId, userCode);
 
                 return Ok(responeAPI);
             }
@@ -50,8 +49,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responeAPI.Data = await _callService.GetCallHistory(userSession.Id);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responeAPI.Data = await _callService.GetCallHistory(userId);
 
                 return Ok(responeAPI);
             }
@@ -69,8 +69,9 @@ namespace notip_server.Controllers
             ResponseAPI responeAPI = new ResponseAPI();
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responeAPI.Data = await _callService.GetHistoryById(userSession.Id, key);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responeAPI.Data = await _callService.GetHistoryById(userId, key);
 
                 return Ok(responeAPI);
             }
@@ -91,8 +92,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await _callService.JoinVideoCall(userSession.Id, url);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _callService.JoinVideoCall(userId, url);
 
                 return Ok(responeAPI);
             }
@@ -112,8 +114,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await _callService.CancelVideoCall(userSession.Id, url);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _callService.CancelVideoCall(userId, url);
 
                 return Ok(responeAPI);
             }

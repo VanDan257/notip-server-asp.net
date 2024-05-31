@@ -13,11 +13,13 @@ namespace notip_server.Controllers
     {
         private readonly IFriendService friendService;
         private readonly IUserService _userService;
+        private readonly IHttpContextAccessor _contextAccessor;
 
         public FriendController(IFriendService friendService, IHttpContextAccessor contextAccessor, IUserService userService)
         {
             this.friendService = friendService;
             _userService = userService;
+            _contextAccessor = contextAccessor;
         }
 
         [HttpGet("get-list-friend")]
@@ -27,8 +29,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await friendService.GetListFriend(userSession.Id, request);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await friendService.GetListFriend(userId, request);
 
                 return Ok(responseAPI);
             }
@@ -46,8 +49,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await friendService.GetListFriendInvite(userSession.Id, request);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await friendService.GetListFriendInvite(userId, request);
 
                 return Ok(responseAPI);
             }
@@ -66,8 +70,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await friendService.SendFriendRequest(userSession.Id, receiver.UserCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await friendService.SendFriendRequest(userId, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -86,8 +91,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await friendService.AcceptFriendRequest(userSession.Id, receiver.UserCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await friendService.AcceptFriendRequest(userId, receiver.UserCode);
 
                 return Ok();
             }
@@ -106,8 +112,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await friendService.CancelFriendRequest(userSession.Id, receiver.UserCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await friendService.CancelFriendRequest(userId, receiver.UserCode);
 
                 return Ok();
             }
@@ -126,8 +133,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await friendService.BlockUser(userSession.Id, receiver.UserCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await friendService.BlockUser(userId, receiver.UserCode);
 
                 return Ok(responseAPI);
             }
@@ -146,8 +154,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await friendService.UnBlockUser(userSession.Id, receiver.UserCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await friendService.UnBlockUser(userId, receiver.UserCode);
 
                 return Ok();
             }

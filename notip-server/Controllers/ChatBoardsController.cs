@@ -11,15 +11,13 @@ namespace notip_server.Controllers
     [ApiController]
     public class ChatBoardsController : ControllerBase
     {
-        private readonly IUserService _userService;
         private IChatBoardService _chatBoardService;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor, IUserService userService)
+        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor)
         {
             _chatBoardService = chatBoardService;
             _contextAccessor = contextAccessor;
-            _userService = userService;
         }
 
         [Route("get-history")]
@@ -30,8 +28,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _chatBoardService.GetHistory(userSession.Id);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _chatBoardService.GetHistory(userId);
 
                 return Ok(responseAPI);
             }
@@ -49,8 +48,9 @@ namespace notip_server.Controllers
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _chatBoardService.SearchChatGroup(userSession.Id, keySearch);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _chatBoardService.SearchChatGroup(userId, keySearch);
 
                 return Ok(responseAPI);
             }
@@ -68,8 +68,9 @@ namespace notip_server.Controllers
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _chatBoardService.AccessChatGroup(userSession.Id, groupCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _chatBoardService.AccessChatGroup(userId, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -88,8 +89,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _chatBoardService.GetInfo(userSession.Id, groupCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _chatBoardService.GetInfo(userId, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -109,8 +111,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await _chatBoardService.AddGroup(userSession.Id, request);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _chatBoardService.AddGroup(userId, request);
 
                 return Ok(responseAPI);
             }
@@ -147,8 +150,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                await _chatBoardService.OutGroup(userSession.Id, groupCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _chatBoardService.OutGroup(userId, groupCode);
 
                 return Ok(responseAPI);
             }
@@ -214,8 +218,9 @@ namespace notip_server.Controllers
                 MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
                 message.Attachments = Request.Form.Files.ToList();
 
-                var userSession = await _userService.GetCurrentUserAsync();
-                await _chatBoardService.SendMessage(userSession.Id, groupCode, message);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _chatBoardService.SendMessage(userId, groupCode, message);
 
                 return Ok(responseAPI);
             }
@@ -234,8 +239,9 @@ namespace notip_server.Controllers
 
             try
             {
-                var userSession = await _userService.GetCurrentUserAsync();
-                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userSession.Id, groupCode);
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userId, groupCode);
 
                 return Ok(responseAPI);
             }
