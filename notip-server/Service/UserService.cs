@@ -121,7 +121,7 @@ namespace notip_server.Service
                 else if (!string.IsNullOrEmpty(request.KeySearch))
                 {
                     query = query.Where(x => x.Id != userSession)
-                                 .Where(x => x.UserName.ToLower().Contains(request.KeySearch.ToLower()));
+                                 .Where(x => x.UserName.ToLower().Contains(request.KeySearch.ToLower()) || x.Email.ToLower().Contains(request.KeySearch.ToLower()) || x.PhoneNumber.Contains(request.KeySearch));
                 }
 
                 int total = await query.CountAsync();

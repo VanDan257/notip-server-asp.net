@@ -42,44 +42,6 @@ builder.Services.AddDbContext<DbChatContext>(option =>
 });
 #endregion
 
-#region Config Amazon S3
-
-builder.Services.AddAWSService<IAmazonS3>(new AWSOptions
-{
-    // DefaultClientConfig = new AmazonS3Config
-    // {
-    //     ServiceURL = EnviConfig.ServiceURLAwsS3
-    // },
-    Credentials = new Amazon.Runtime.BasicAWSCredentials(
-        EnviConfig.AccessKeyAwsS3,
-        EnviConfig.SecretKeyAwsS3
-    )
-});
-
-// var s3Config = new AmazonS3Config
-// {
-//    ServiceURL = EnviConfig.ServiceURLAwsS3
-// };
-
-// var awsOptions = new AWSOptions
-// {
-//    Credentials = new Amazon.Runtime.BasicAWSCredentials(
-//        EnviConfig.AccessKeyAwsS3,
-//        EnviConfig.SecretKeyAwsS3
-//    ),
-//    Region = RegionEndpoint.USEast1 // Thay đổi RegionEndpoint theo nhu cầu của bạn
-// };
-
-// awsOptions.DefaultClientConfig.ServiceURL = EnviConfig.ServiceURLAwsS3;
-
-// builder.Services.AddDefaultAWSOptions(awsOptions);
-// builder.Services.AddAWSService<IAmazonS3>(new AWSOptions
-// {
-//    DefaultClientConfig = s3Config
-// });
-
-#endregion
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

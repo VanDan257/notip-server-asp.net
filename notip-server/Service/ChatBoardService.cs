@@ -33,20 +33,17 @@ namespace notip_server.Service
         private readonly IUserService _userService;
         private readonly ICommonService _commonService;
         private readonly IAmazonS3 _s3Client;
-        private readonly string _bucketName = EnviConfig.BucketNameAwsS3;
 
         #endregion
 
         #region ctor
-        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IConfiguration configuration, IUserService userService, ICommonService commonService)
+        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IUserService userService, ICommonService commonService)
         {
             this.chatContext = chatContext;
             this.chatHub = chatHub;
             this.webHostEnvironment = webHostEnvironment;
             _userService = userService;
             _commonService = commonService;
-            //_storageConnectionString = configuration.GetValue<string>("BlobConnectionString");
-            //_storageContainerName = configuration.GetValue<string>("BlobContainerName");
         }
 
         #endregion
@@ -323,7 +320,7 @@ namespace notip_server.Service
             //Lấy thông tin nhóm chat
             Group group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code.Equals(groupCode));
 
-            if(group == null)
+           if(group == null)
             {
                 throw new Exception("Không tồn tại nhóm chat");
             }
@@ -587,8 +584,8 @@ namespace notip_server.Service
             // Nếu tin nhắn có file => lưu file
             if (message.Attachments != null && message.Attachments.Count > 0)
             {
-                string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Attachments/{groupCode}/{DateTime.Now.Year}/");
-                FileHelper.CreateDirectory(path);
+                //string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Attachments/{groupCode}/{DateTime.Now.Year}/");
+                //FileHelper.CreateDirectory(path);
                 try
                 {
                     if (message.Attachments[0].Length > 0)
@@ -599,7 +596,6 @@ namespace notip_server.Service
                         //     using (var stream = new FileStream(pathFile, FileMode.Create))
                         //     {
                         //         await message.Attachments[0].CopyToAsync(stream);
-                        //         await UploadBlobFile(message.Attachments[0]);
                         //     }
                         // }
                         // message.Path = $"Attachments/{groupCode}/{DateTime.Now.Year}/{message.Attachments[0].FileName}";

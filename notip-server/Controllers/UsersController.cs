@@ -13,15 +13,15 @@ namespace notip_server.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
+        //private readonly UserManager<User> _userManager;
         private IUserService _userService;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        public UsersController(IUserService userService, IHttpContextAccessor contextAccessor, UserManager<User> userManager)
+        public UsersController(IUserService userService, IHttpContextAccessor contextAccessor)
         {
             _userService = userService;
             _contextAccessor = contextAccessor;
-            _userManager = userManager;
+            //_userManager = userManager;
         }
 
         [HttpGet("profile")]

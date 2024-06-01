@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using notip_server.Data;
 
@@ -11,9 +12,11 @@ using notip_server.Data;
 namespace notip_server.Migrations
 {
     [DbContext(typeof(DbChatContext))]
-    partial class DbChatContextModelSnapshot : ModelSnapshot
+    [Migration("20240531123704_update_table_groupuser")]
+    partial class update_table_groupuser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -296,8 +299,6 @@ namespace notip_server.Migrations
 
                     b.HasIndex("GroupCode");
 
-                    b.HasIndex("UserCode");
-
                     b.ToTable("GroupUser", (string)null);
                 });
 
@@ -556,7 +557,7 @@ namespace notip_server.Migrations
 
                     b.HasOne("notip_server.Models.User", "User")
                         .WithMany("GroupUsers")
-                        .HasForeignKey("UserCode")
+                        .HasForeignKey("GroupCode")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_GroupUser_User");

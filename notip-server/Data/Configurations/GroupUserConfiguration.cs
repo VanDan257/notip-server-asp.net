@@ -22,6 +22,10 @@ namespace notip_server.Data.Configurations
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_GroupUser_Group");
 
+            builder.HasOne(d => d.User).WithMany(p => p.GroupUsers)
+                .HasForeignKey(d => d.UserCode)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_GroupUser_User");
         }
     }
 }
