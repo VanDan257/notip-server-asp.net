@@ -21,6 +21,7 @@ using System.Net.WebSockets;
 using System.ComponentModel;
 using Amazon.S3.Model;
 using Amazon.S3;
+using System.IO;
 
 namespace notip_server.Service
 {
@@ -31,13 +32,13 @@ namespace notip_server.Service
         private readonly IWebHostEnvironment webHostEnvironment;
         private ChatHub chatHub;
         private readonly IUserService _userService;
-        private readonly ICommonService _commonService;
+        private readonly IAwsS3Service _commonService;
         private readonly IAmazonS3 _s3Client;
 
         #endregion
 
         #region ctor
-        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IUserService userService, ICommonService commonService)
+        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IUserService userService, IAwsS3Service commonService)
         {
             this.chatContext = chatContext;
             this.chatHub = chatHub;
@@ -318,18 +319,18 @@ namespace notip_server.Service
         public async Task<object> GetInfo(Guid userSession, Guid groupCode)
         {
             //Lấy thông tin nhóm chat
-            Group group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code.Equals(groupCode));
+            Group group = await chatContext.Groups.Include(s => s.GroupUsers).ThenInclude(u => u.User).FirstOrDefaultAsync(x => x.Code.Equals(groupCode));
 
-           if(group == null)
+            if(group == null)
             {
                 throw new Exception("Không tồn tại nhóm chat");
             }
             // Nếu tồn tại nhóm chat + nhóm chat có type = SINGLE (Chat 1-1) => trả về thông tin người chat cùng
             if (group.Type.Equals(Constants.GroupType.SINGLE))
             {
-                Guid userCode = group.GroupUsers.FirstOrDefault(x => x.UserCode != userSession).UserCode;
+                var user = await chatContext.GroupUsers.FirstOrDefaultAsync(x => x.UserCode != userSession && x.GroupCode == group.Code);
                 return await chatContext.Users
-                        .Where(x => x.Id.Equals(userCode))
+                        .Where(x => x.Id.Equals(user.UserCode))
                         .OrderBy(x => x.UserName)
                         .Select(x => new
                         {
@@ -584,27 +585,27 @@ namespace notip_server.Service
             // Nếu tin nhắn có file => lưu file
             if (message.Attachments != null && message.Attachments.Count > 0)
             {
-                //string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Attachments/{groupCode}/{DateTime.Now.Year}/");
-                //FileHelper.CreateDirectory(path);
+                string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Attachments/{groupCode}/{DateTime.Now.Year}/");
+                FileHelper.CreateDirectory(path);
                 try
                 {
                     if (message.Attachments[0].Length > 0)
                     {
-                        // string pathFile = path + message.Attachments[0].FileName;
-                        // if (!File.Exists(pathFile))
-                        // {
-                        //     using (var stream = new FileStream(pathFile, FileMode.Create))
-                        //     {
-                        //         await message.Attachments[0].CopyToAsync(stream);
-                        //     }
-                        // }
-                        // message.Path = $"Attachments/{groupCode}/{DateTime.Now.Year}/{message.Attachments[0].FileName}";
-                        // message.Content = message.Attachments[0].FileName;
-
-                        string pathFile = $"{groupCode}/{DateTime.Now.Year}";
-                        await _commonService.UploadBlobFile(message.Attachments[0], pathFile);
-                        message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
+                        string pathFile = path + message.Attachments[0].FileName;
+                        if (!File.Exists(pathFile))
+                        {
+                            using (var stream = new FileStream(pathFile, FileMode.Create))
+                            {
+                                await message.Attachments[0].CopyToAsync(stream);
+                            }
+                        }
+                        message.Path = $"Attachments/{groupCode}/{DateTime.Now.Year}/{message.Attachments[0].FileName}";
                         message.Content = message.Attachments[0].FileName;
+
+                        //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
+                        //await _commonService.UploadBlobFile(message.Attachments[0], pathFile);
+                        //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
+                        //message.Content = message.Attachments[0].FileName;
                     }
                 }
                 catch (Exception ex)

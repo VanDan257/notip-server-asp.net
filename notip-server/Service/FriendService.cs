@@ -148,7 +148,7 @@ namespace notip_server.Service
                 if (friend != null)
                 {
                     friend.Status = Constants.FriendStatus.FRIEND;
-                    _chatContext.Update(friend);
+                    _chatContext.Friends.Update(friend);
 
                     await _chatContext.SaveChangesAsync();
                 }
@@ -159,7 +159,7 @@ namespace notip_server.Service
                     {
 
                         friend1.Status = Constants.FriendStatus.FRIEND;
-                        _chatContext.Update(friend);
+                        _chatContext.Friends.Update(friend1);
 
                         await _chatContext.SaveChangesAsync();
                     }

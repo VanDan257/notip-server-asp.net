@@ -23,7 +23,7 @@ namespace notip_server.Controllers
         }
 
         [HttpGet("get-list-friend")]
-        public async Task<IActionResult> GetListFriend(GetContactRequest request)
+        public async Task<IActionResult> GetListFriend([FromQuery] GetContactRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 

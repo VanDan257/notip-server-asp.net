@@ -18,10 +18,14 @@ namespace notip_server.Extensions
             awsOptions.Credentials = new Amazon.Runtime.BasicAWSCredentials(
                 EnviConfig.AccessKeyAwsS3, 
                 EnviConfig.ServiceURLAwsS3);
-            awsOptions.Region = RegionEndpoint.USEast1; // Chỉnh theo region của Cellar
+            awsOptions.Region = RegionEndpoint.EUWest3; // Chỉnh theo region của Cellar
+
+            // Khởi tạo bucket nếu chưa tồn tại
+            //bucketInitializer.InitializeBucketAsync().Wait();
 
             services.AddDefaultAWSOptions(awsOptions);
             services.AddAWSService<IAmazonS3>();
+            //services.AddSingleton<S3BucketInitializer>();
 
             return services;
         }

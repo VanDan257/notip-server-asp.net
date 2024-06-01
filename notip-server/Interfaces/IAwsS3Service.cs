@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace notip_server.Interfaces
 {
-    public interface ICommonService
+    public interface IAwsS3Service
     {
         Task UploadBlobFile(IFormFile file, string filePath);
     }

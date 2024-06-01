@@ -18,8 +18,8 @@ namespace notip_server.Service
         private readonly UserManager<User> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DbChatContext chatContext;
-        private readonly ICommonService _commonService;
-        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, ICommonService commonService)
+        private readonly IAwsS3Service _commonService;
+        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, IAwsS3Service commonService)
         {
             this.chatContext = chatContext;
             _userManager = userManager;
