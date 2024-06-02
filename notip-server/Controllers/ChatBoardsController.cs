@@ -5,6 +5,8 @@ using notip_server.Dto;
 using notip_server.Interfaces;
 using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace notip_server.Controllers
 {
@@ -14,6 +16,8 @@ namespace notip_server.Controllers
     {
         private IChatBoardService _chatBoardService;
         private readonly IHttpContextAccessor _contextAccessor;
+
+        private readonly string privateKey = System.IO.File.ReadAllText("private_key.pem");
 
         public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor)
         {
@@ -201,35 +205,100 @@ namespace notip_server.Controllers
             }
         }
 
-        [Route("send-message")]
-        [HttpPost]
-        public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
+        //[Route("send-message")]
+        //[HttpPost]
+        //public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
+        //{
+        //    ResponseAPI responseAPI = new ResponseAPI();
 
+        //    try
+        //    {
+        //        string jsonMessage = HttpContext.Request.Form["data"]!;
+        //        var settings = new JsonSerializerSettings
+        //        {
+        //            NullValueHandling = NullValueHandling.Ignore,
+        //            MissingMemberHandling = MissingMemberHandling.Ignore,
+        //        };
+
+        //        MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
+        //        message.Attachments = Request.Form.Files.ToList();
+
+        //        string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+        //        Guid.TryParse(userSession, out var userId);
+        //        await _chatBoardService.SendMessage(userId, groupCode, message);
+
+        //        return Ok(responseAPI);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        responseAPI.Message = ex.Message;
+        //        return BadRequest(responseAPI);
+        //    }
+        //}
+
+
+        [HttpPost]
+        public IActionResult Post([FromBody] EncryptedMessage encryptedMessage)
+        {
             try
             {
-                string jsonMessage = HttpContext.Request.Form["data"]!;
-                var settings = new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    MissingMemberHandling = MissingMemberHandling.Ignore,
-                };
-
-                MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
-                message.Attachments = Request.Form.Files.ToList();
-
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                Guid.TryParse(userSession, out var userId);
-                await _chatBoardService.SendMessage(userId, groupCode, message);
-
-                return Ok(responseAPI);
+                var aesKey = DecryptString(encryptedMessage.Key, privateKey);
+                var decryptedMessage = DecryptAES(encryptedMessage.Message, aesKey);
+                return Ok(new { message = decryptedMessage });
             }
             catch (Exception ex)
             {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
+                return BadRequest(new { error = ex.Message });
             }
+        }
+
+
+        private string DecryptString(string cipherText, string privateKey)
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.ImportFromPem(privateKey.ToCharArray());
+                var bytesToDecrypt = Convert.FromBase64String(cipherText);
+                var decryptedBytes = rsa.Decrypt(bytesToDecrypt, RSAEncryptionPadding.Pkcs1);
+                return Encoding.UTF8.GetString(decryptedBytes);
+            }
+        }
+
+        private string DecryptAES(string cipherText, string key)
+        {
+            var fullCipher = Convert.FromBase64String(cipherText);
+            var iv = new byte[16];
+            var cipher = new byte[16];
+
+            Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+            Array.Copy(fullCipher, iv.Length, cipher, 0, iv.Length);
+
+            var result = string.Empty;
+
+            using (var aesAlg = Aes.Create())
+            {
+                using (var decryptor = aesAlg.CreateDecryptor(Encoding.UTF8.GetBytes(key), iv))
+                {
+                    using (var msDecrypt = new MemoryStream(cipher))
+                    {
+                        using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (var srDecrypt = new StreamReader(csDecrypt))
+                            {
+                                result = srDecrypt.ReadToEnd();
+                            }
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public class EncryptedMessage
+        {
+            public string Message { get; set; }
+            public string Key { get; set; }
         }
 
         [Route("get-message-by-group/{groupCode}")]
