@@ -236,9 +236,9 @@ namespace notip_server.Controllers
         //    }
         //}
 
-
+        [Route("send-message")]
         [HttpPost]
-        public IActionResult Post([FromBody] EncryptedMessage encryptedMessage)
+        public IActionResult SendMessage([FromBody] EncryptedMessage encryptedMessage)
         {
             try
             {
