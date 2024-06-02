@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using notip_server.Dto;
 using notip_server.Interfaces;
 using notip_server.ViewModel.ChatBoard;
+using notip_server.ViewModel.Common;
 
 namespace notip_server.Controllers
 {
@@ -251,5 +252,6 @@ namespace notip_server.Controllers
                 return BadRequest(responseAPI);
             }
         }
+
     }
 }

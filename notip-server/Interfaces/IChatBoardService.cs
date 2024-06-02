@@ -1,5 +1,6 @@
 ﻿using notip_server.Dto;
 using notip_server.ViewModel.ChatBoard;
+using notip_server.ViewModel.Common;
 
 namespace notip_server.Interfaces
 {
@@ -16,5 +17,6 @@ namespace notip_server.Interfaces
         Task UpdateGroupAvatar(UpdateGroupAvatarRequest request);
         Task SendMessage(Guid userSession, Guid groupCode, MessageDto message);
         Task<List<MessageDto>> GetMessageByGroup(Guid userSession, Guid groupCode);
+        Task<PagingResult<GroupAdminResponse>> GetAllChatRoom(PagingRequest request);
     }
 }

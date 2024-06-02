@@ -16,13 +16,11 @@ namespace notip_server.Controllers
     {
         private IAuthService _authService;
         private IWebHostEnvironment _webHostEnvironment;
-        private readonly IHttpContextAccessor _contextAccessor;
 
-        public AuthsController(IAuthService authService,IWebHostEnvironment webHostEnvironment, IHttpContextAccessor contextAccessor)
+        public AuthsController(IAuthService authService,IWebHostEnvironment webHostEnvironment)
         {
             _authService = authService;
             _webHostEnvironment = webHostEnvironment;
-            _contextAccessor = contextAccessor;
         }
 
 
@@ -63,7 +61,23 @@ namespace notip_server.Controllers
             }
         }
 
-        //[HttpPost("admin/auths/login")]
+        [HttpPost("admin/auths/login")]
+        public async Task<IActionResult> LoginAdmin(LoginRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                AccessToken accessToken = await _authService.Login(request);
+                responseAPI.Data = accessToken;
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
 
         [HttpGet("file")]
         public async Task<IActionResult> DownloadFile(string path)

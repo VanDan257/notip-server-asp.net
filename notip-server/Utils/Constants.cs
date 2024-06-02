@@ -31,5 +31,6 @@ namespace notip_server.Utils
         }
 
         public const string AVATAR_DEFAULT = "images/no_image.jpg";
+        public const string AVATAR_GROUP = "images/groupuserimage.PNG";
     }
 }

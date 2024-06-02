@@ -22,6 +22,7 @@ using System.ComponentModel;
 using Amazon.S3.Model;
 using Amazon.S3;
 using System.IO;
+using notip_server.ViewModel.Common;
 
 namespace notip_server.Service
 {
@@ -32,19 +33,18 @@ namespace notip_server.Service
         private readonly IWebHostEnvironment webHostEnvironment;
         private ChatHub chatHub;
         private readonly IUserService _userService;
-        private readonly IAwsS3Service _commonService;
-        private readonly IAmazonS3 _s3Client;
+        private readonly IAwsS3Service _aswS3Service;
 
         #endregion
 
         #region ctor
-        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IUserService userService, IAwsS3Service commonService)
+        public ChatBoardService(DbChatContext chatContext, IWebHostEnvironment webHostEnvironment, ChatHub chatHub, IUserService userService, IAwsS3Service aswS3Service)
         {
             this.chatContext = chatContext;
             this.chatHub = chatHub;
             this.webHostEnvironment = webHostEnvironment;
             _userService = userService;
-            _commonService = commonService;
+            _aswS3Service = aswS3Service;
         }
 
         #endregion
@@ -384,7 +384,7 @@ namespace notip_server.Service
                 CreatedBy = userCode,
                 Type = Constants.GroupType.MULTI,
                 LastActive = dateNow,
-                Avatar = Constants.AVATAR_DEFAULT
+                Avatar = Constants.AVATAR_GROUP
             };
 
             List<GroupUser> groupUsers = request.Users.Select(x => new GroupUser()
@@ -519,7 +519,7 @@ namespace notip_server.Service
                     //     }
                     // }
 
-                    await _commonService.UploadBlobFile(request.Image[0], "groupchat");
+                    await _aswS3Service.UploadBlobFile(request.Image[0], "groupchat");
                     grp.Avatar = $"NotipCloud/groupchat/{request.Image[0].FileName}";
 
                     chatContext.Groups.Update(grp);
@@ -603,7 +603,7 @@ namespace notip_server.Service
                         message.Content = message.Attachments[0].FileName;
 
                         //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
-                        //await _commonService.UploadBlobFile(message.Attachments[0], pathFile);
+                        //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
                         //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
                         //message.Content = message.Attachments[0].FileName;
                     }
@@ -704,6 +704,51 @@ namespace notip_server.Service
 
                         }
                     }).ToListAsync();
+        }
+
+        /// <summary>
+        /// Lấy tất cả phòng chat
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<PagingResult<GroupAdminResponse>> GetAllChatRoom(PagingRequest request)
+        {
+            try
+            {
+                var query = chatContext.Groups.Include(m => m.Messages).Include(g => g.GroupUsers).AsQueryable();
+
+                int total = await query.CountAsync();
+
+                if(request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
+
+                int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
+
+                
+                var groups = await query
+                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    .Take(request.PageSize.Value)
+                    .Select(x => new GroupAdminResponse()
+                    {
+                        Code = x.Code,
+                        Type = x.Type,
+                        Avatar = "images/no_image.jpg",
+                        Name = x.Type == Constants.GroupType.SINGLE ? String.Join(", ", x.GroupUsers.Select(x => x.User.UserName)) : x.Name,
+                        Created = x.Created,
+                        CreatedBy = x.CreatedBy,
+                        LastActive = x.LastActive,
+                        NumberOfMessage = x.Messages.Count,
+                        NumberOfMember = x.GroupUsers.Count
+                    })
+                    .ToListAsync();
+
+                return new PagingResult<GroupAdminResponse>(groups, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
         }
     }
 }

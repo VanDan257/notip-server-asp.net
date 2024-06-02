@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
 using notip_server.Models;
+using notip_server.ViewModel.Auth;
 using notip_server.ViewModel.User;
 using System.Net.WebSockets;
 
@@ -85,5 +87,6 @@ namespace notip_server.Controllers
                 return BadRequest(responseAPI);
             }
         }
+
     }
 }
