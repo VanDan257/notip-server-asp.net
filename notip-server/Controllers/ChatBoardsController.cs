@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.Service;
 using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
 using System.Security.Cryptography;
@@ -195,6 +196,24 @@ namespace notip_server.Controllers
             try
             {
                 await _chatBoardService.AddMembersToGroup(request);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpPost("update-photo-chat")]
+        public async Task<IActionResult> UpdatePhotoChat(UpdateGroupAvatarRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                var data = await _chatBoardService.UpdatePhotoChat(request);
+                responseAPI.Data = data;
 
                 return Ok(responseAPI);
             }

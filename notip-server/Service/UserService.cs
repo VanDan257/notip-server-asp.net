@@ -10,6 +10,8 @@ using notip_server.Utils;
 using notip_server.ViewModel.Friend;
 using notip_server.ViewModel.Common;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Hosting;
+using System.Runtime.ExceptionServices;
 
 namespace notip_server.Service
 {
@@ -18,13 +20,15 @@ namespace notip_server.Service
         private readonly UserManager<User> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DbChatContext chatContext;
+        private readonly IWebHostEnvironment webHostEnvironment;
         private readonly IAwsS3Service _commonService;
-        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, IAwsS3Service commonService)
+        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, IAwsS3Service commonService, IWebHostEnvironment webHostEnvironment)
         {
             this.chatContext = chatContext;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
             _commonService = commonService;
+            this.webHostEnvironment = webHostEnvironment;
         }
 
         /// <summary>
@@ -82,25 +86,6 @@ namespace notip_server.Service
                 Address = us.Address,
                 Avatar = us.Avatar,
             };
-        }
-
-        public async Task UpdateAvatar(Guid userSessionId, UpdateAvatarRequest request)
-        {
-            try
-            {
-                var user = await chatContext.Users.FirstOrDefaultAsync(x => x.Id == userSessionId);
-                if(user != null){
-                    string pathFile = "Avatar";
-                    await _commonService.UploadBlobFile(request.Image[0], pathFile);
-
-                    user.Avatar = $"{pathFile}/{request.Image[0].FileName}";
-                    chatContext.Users.Update(user);
-                    await chatContext.SaveChangesAsync();
-                }
-            }
-            catch(Exception ex){
-                throw new Exception("Có lỗi xảy ra! Hãy thử lại!");
-            }
         }
 
         /// <summary>
@@ -205,11 +190,55 @@ namespace notip_server.Service
             }
         }
 
-
         public async Task<User?> GetCurrentUserAsync()
         {
             return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
         }
 
+        public async Task<UserDto> UpdateAvatar(Guid userCode, UpdateAvatarRequest request)
+        {
+            var user = await chatContext.Users.FirstOrDefaultAsync(x => x.Id == userCode);
+            if(user == null)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+            string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Avatar/{userCode}/");
+            FileHelper.CreateDirectory(path);
+            try
+            {
+                if (request.Image[0].Length > 0)
+                {
+                    string pathFile = path + request.Image[0].FileName;
+                    if (!File.Exists(pathFile))
+                    {
+                        using (var stream = new FileStream(pathFile, FileMode.Create))
+                        {
+                            await request.Image[0].CopyToAsync(stream);
+                        }
+                    }
+                    user.Avatar= $"Avatar/{userCode}/{request.Image[0].FileName}";
+
+                    chatContext.Users.Update(user);
+                    await chatContext.SaveChangesAsync();
+
+                    //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
+                    //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
+                    //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
+                    //message.Content = message.Attachments[0].FileName;
+                    return new UserDto
+                    {
+                        Avatar = user.Avatar
+                    };
+                }
+                else
+                {
+                    throw new Exception("Không tìm thấy hình ảnh!");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
     }
 }

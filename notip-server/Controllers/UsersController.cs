@@ -88,5 +88,24 @@ namespace notip_server.Controllers
             }
         }
 
+        [HttpPost("update-avatar")]
+        public async Task<IActionResult> UpdateAvatar(UpdateAvatarRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                var data = await _userService.UpdateAvatar(userId, request);
+                responseAPI.Data = data;
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
     }
 }

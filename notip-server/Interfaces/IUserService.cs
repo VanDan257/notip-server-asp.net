@@ -10,6 +10,7 @@ namespace notip_server.Interfaces
     {
         Task<UserDto> GetProfile(Guid userCode);
         Task<UserDto> UpdateProfile(Guid userCode, UpdateProfileRequest request);
+        Task<UserDto> UpdateAvatar(Guid userCode, UpdateAvatarRequest request);
         Task<PagingResult<FriendResponse>> GetContact(Guid userSession, GetContactRequest request);
         Task<User?> GetCurrentUserAsync();
     }

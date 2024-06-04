@@ -750,5 +750,51 @@ namespace notip_server.Service
                 throw new Exception("Có lỗi xảy ra!");
             }
         }
+
+        public async Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request)
+        {
+            var group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code == request.Code);
+            if (group == null)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+            string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/PhotoChat/{request.Code}/");
+            FileHelper.CreateDirectory(path);
+            try
+            {
+                if (request.Image[0].Length > 0)
+                {
+                    string pathFile = path + request.Image[0].FileName;
+                    if (!File.Exists(pathFile))
+                    {
+                        using (var stream = new FileStream(pathFile, FileMode.Create))
+                        {
+                            await request.Image[0].CopyToAsync(stream);
+                        }
+                    }
+                    group.Avatar = $"PhotoChat/{request.Code}/{request.Image[0].FileName}";
+
+                    chatContext.Groups.Update(group);
+                    await chatContext.SaveChangesAsync();
+                    return new GroupDto
+                    {
+                        Avatar = group.Avatar
+                    };
+                    //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
+                    //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
+                    //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
+                    //message.Content = message.Attachments[0].FileName;
+                }
+
+                else
+                {
+                    throw new Exception("Không tìm thấy hình ảnh!");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
     }
 }
