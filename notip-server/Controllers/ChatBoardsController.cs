@@ -16,13 +16,15 @@ namespace notip_server.Controllers
     {
         private IChatBoardService _chatBoardService;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IEncryptionService _encryptionService;
 
         private readonly string privateKey = System.IO.File.ReadAllText("private_key.pem");
 
-        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor)
+        public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor, IEncryptionService encryptionService)
         {
             _chatBoardService = chatBoardService;
             _contextAccessor = contextAccessor;
+            _encryptionService = encryptionService;
         }
 
         [Route("get-history")]
@@ -205,57 +207,57 @@ namespace notip_server.Controllers
             }
         }
 
-        [Route("send-message")]
-        [HttpPost]
-        public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
-        {
-            ResponseAPI responseAPI = new ResponseAPI();
-
-            try
-            {
-                string jsonMessage = HttpContext.Request.Form["data"]!;
-                var settings = new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    MissingMemberHandling = MissingMemberHandling.Ignore,
-                };
-
-                MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
-                message.Attachments = Request.Form.Files.ToList();
-
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                Guid.TryParse(userSession, out var userId);
-                await _chatBoardService.SendMessage(userId, groupCode, message);
-
-                return Ok(responseAPI);
-            }
-            catch (Exception ex)
-            {
-                responseAPI.Message = ex.Message;
-                return BadRequest(responseAPI);
-            }
-        }
-
         //[Route("send-message")]
         //[HttpPost]
-        //public IActionResult SendMessage([FromBody] EncryptedMessage encryptedMessage)
+        //public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
         //{
+        //    ResponseAPI responseAPI = new ResponseAPI();
+
         //    try
         //    {
-        //        // Giải mã khóa AES bằng khóa riêng tư RSA
-        //        var aesKey = DecryptString(encryptedMessage.Key, privateKey);
+        //        string jsonMessage = HttpContext.Request.Form["data"]!;
+        //        var settings = new JsonSerializerSettings
+        //        {
+        //            NullValueHandling = NullValueHandling.Ignore,
+        //            MissingMemberHandling = MissingMemberHandling.Ignore,
+        //        };
 
-        //        // Giải mã tin nhắn bằng khóa AES
-        //        var decryptedMessage = DecryptAES(encryptedMessage.Message, aesKey);
+        //        MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
+        //        message.Attachments = Request.Form.Files.ToList();
 
-        //        // Xử lý tin nhắn đã giải mã theo yêu cầu
-        //        return Ok(new { message = decryptedMessage });
+        //        string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+        //        Guid.TryParse(userSession, out var userId);
+        //        await _chatBoardService.SendMessage(userId, groupCode, message);
+
+        //        return Ok(responseAPI);
         //    }
         //    catch (Exception ex)
         //    {
-        //        return BadRequest(new { error = ex.Message });
+        //        responseAPI.Message = ex.Message;
+        //        return BadRequest(responseAPI);
         //    }
         //}
+
+        [Route("send-message")]
+        [HttpPost]
+        public IActionResult SendMessage([FromBody] EncryptedMessage encryptedMessage)
+        {
+            try
+            {
+                // Giải mã khóa AES bằng khóa riêng tư RSA
+                var aesKey = _encryptionService.DecryptSymmetricKey(encryptedMessage.Key);
+
+                // Giải mã tin nhắn bằng khóa AES
+                var decryptedMessage = _encryptionService.DecryptMessage(encryptedMessage.Message, aesKey);
+
+                // Xử lý tin nhắn đã giải mã theo yêu cầu
+                return Ok(new { message = decryptedMessage });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
 
 
         //private string DecryptString(string cipherText, string privateKey)
@@ -295,11 +297,11 @@ namespace notip_server.Controllers
         //    }
         //}
 
-        //public class EncryptedMessage
-        //{
-        //    public string Message { get; set; }
-        //    public string Key { get; set; }
-        //}
+        public class EncryptedMessage
+        {
+            public string Message { get; set; }
+            public string Key { get; set; }
+        }
 
         [Route("get-message-by-group/{groupCode}")]
         [HttpGet]

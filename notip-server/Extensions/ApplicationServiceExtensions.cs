@@ -28,6 +28,7 @@ namespace notip_server.Extensions
             services.AddScoped<IChatBoardService, ChatBoardService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IFriendService, FriendService>();
+            services.AddScoped<IEncryptionService, EncryptionService>();
             services.AddSingleton<IAwsS3Service, AwsS3Service>();
 
             services.AddSingleton<IPasswordService, PasswordService>();
