@@ -676,34 +676,110 @@ namespace notip_server.Service
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="groupCode">Mã nhóm</param>
         /// <returns>Danh sách tin nhắn</returns>
-        public async Task<List<MessageDto>> GetMessageByGroup(Guid userCode, Guid groupCode)
+        public async Task<PagingResult<MessageDto>> GetMessageByGroup(Guid userCode, GetMessageRequest request)
         {
-            return await chatContext.Messages
-                    .Where(x => x.GroupCode.Equals(groupCode))
-                    .Where(x => x.Group.GroupUsers.Any(y => y.UserCode.Equals(userCode)))
-                    .OrderBy(x => x.Created)
-                    .Select(x => new MessageDto()
-                    {
-                        Created = x.Created,
-                        Content = x.Content,
-                        CreatedBy = x.CreatedBy,
-                        GroupCode = x.GroupCode,
-                        Id = x.Id,
-                        Path = x.Path,
-                        Type = x.Type,
-                        UserCreatedBy = new UserDto()
-                        {
-                            Id = x.UserCreatedBy.Id,
-                            UserName = x.UserCreatedBy.UserName,
-                            Dob = x.UserCreatedBy.Dob,
-                            PhoneNumber = x.UserCreatedBy.PhoneNumber,
-                            Email = x.UserCreatedBy.Email,
-                            Address = x.UserCreatedBy.Address,
-                            Gender = x.UserCreatedBy.Gender,
-                            Avatar = x.UserCreatedBy.Avatar
+            try
+            {
+                var query = chatContext.Messages.AsQueryable();
 
+                if(request.groupCode != null)
+                {
+                    query = query.Where(x => x.GroupCode.Equals(request.groupCode))
+                            .Where(x => x.Group.GroupUsers.Any(y => y.UserCode.Equals(userCode)));
+                }
+
+                int total = await query.CountAsync();
+
+                if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
+
+                int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
+
+                var messages = await query
+                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    .Take(request.PageSize.Value)
+                    .OrderBy(x => x.Created)
+                        .Select(x => new MessageDto()
+                        {
+                            Created = x.Created,
+                            Content = x.Content,
+                            CreatedBy = x.CreatedBy,
+                            GroupCode = x.GroupCode,
+                            Id = x.Id,
+                            Path = x.Path,
+                            Type = x.Type,
+                            UserCreatedBy = new UserDto()
+                            {
+                                Id = x.UserCreatedBy.Id,
+                                UserName = x.UserCreatedBy.UserName,
+                                Dob = x.UserCreatedBy.Dob,
+                                PhoneNumber = x.UserCreatedBy.PhoneNumber,
+                                Email = x.UserCreatedBy.Email,
+                                Address = x.UserCreatedBy.Address,
+                                Gender = x.UserCreatedBy.Gender,
+                                Avatar = x.UserCreatedBy.Avatar
+
+                            }
+                        }).ToListAsync();
+
+                return new PagingResult<MessageDto>(messages, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật ảnh phòng chat
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request)
+        {
+            var group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code == request.Code);
+            if (group == null)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+            string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/PhotoChat/{request.Code}/");
+            FileHelper.CreateDirectory(path);
+            try
+            {
+                if (request.Image[0].Length > 0)
+                {
+                    string pathFile = path + request.Image[0].FileName;
+                    if (!File.Exists(pathFile))
+                    {
+                        using (var stream = new FileStream(pathFile, FileMode.Create))
+                        {
+                            await request.Image[0].CopyToAsync(stream);
                         }
-                    }).ToListAsync();
+                    }
+                    group.Avatar = $"PhotoChat/{request.Code}/{request.Image[0].FileName}";
+
+                    chatContext.Groups.Update(group);
+                    await chatContext.SaveChangesAsync();
+                    return new GroupDto
+                    {
+                        Avatar = group.Avatar
+                    };
+                    //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
+                    //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
+                    //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
+                    //message.Content = message.Attachments[0].FileName;
+                }
+
+                else
+                {
+                    throw new Exception("Không tìm thấy hình ảnh!");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
         }
 
         /// <summary>
@@ -751,50 +827,5 @@ namespace notip_server.Service
             }
         }
 
-        public async Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request)
-        {
-            var group = await chatContext.Groups.FirstOrDefaultAsync(x => x.Code == request.Code);
-            if (group == null)
-            {
-                throw new Exception("Có lỗi xảy ra!");
-            }
-            string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/PhotoChat/{request.Code}/");
-            FileHelper.CreateDirectory(path);
-            try
-            {
-                if (request.Image[0].Length > 0)
-                {
-                    string pathFile = path + request.Image[0].FileName;
-                    if (!File.Exists(pathFile))
-                    {
-                        using (var stream = new FileStream(pathFile, FileMode.Create))
-                        {
-                            await request.Image[0].CopyToAsync(stream);
-                        }
-                    }
-                    group.Avatar = $"PhotoChat/{request.Code}/{request.Image[0].FileName}";
-
-                    chatContext.Groups.Update(group);
-                    await chatContext.SaveChangesAsync();
-                    return new GroupDto
-                    {
-                        Avatar = group.Avatar
-                    };
-                    //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
-                    //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
-                    //message.Path = $"NotipCloud/{pathFile}/{message.Attachments[0].FileName}";
-                    //message.Content = message.Attachments[0].FileName;
-                }
-
-                else
-                {
-                    throw new Exception("Không tìm thấy hình ảnh!");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Có lỗi xảy ra!");
-            }
-        }
     }
 }

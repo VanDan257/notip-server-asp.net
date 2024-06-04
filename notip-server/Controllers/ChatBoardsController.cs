@@ -320,9 +320,9 @@ namespace notip_server.Controllers
         //    public string Key { get; set; }
         //}
 
-        [Route("get-message-by-group/{groupCode}")]
+        [Route("get-message-by-group")]
         [HttpGet]
-        public async Task<IActionResult> GetMessageByGroup(Guid groupCode)
+        public async Task<IActionResult> GetMessageByGroup([FromQuery] GetMessageRequest request)
         {
             ResponseAPI responseAPI = new ResponseAPI();
 
@@ -330,7 +330,7 @@ namespace notip_server.Controllers
             {
                 string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
                 Guid.TryParse(userSession, out var userId);
-                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userId, groupCode);
+                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userId, request);
 
                 return Ok(responseAPI);
             }

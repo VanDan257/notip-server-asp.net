@@ -190,11 +190,13 @@ namespace notip_server.Service
             }
         }
 
-        public async Task<User?> GetCurrentUserAsync()
-        {
-            return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
-        }
-
+        /// <summary>
+        /// Cập nhật ảnh đại diện người dùng
+        /// </summary>
+        /// <param name="userCode"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<UserDto> UpdateAvatar(Guid userCode, UpdateAvatarRequest request)
         {
             var user = await chatContext.Users.FirstOrDefaultAsync(x => x.Id == userCode);
@@ -240,5 +242,11 @@ namespace notip_server.Service
                 throw new Exception("Có lỗi xảy ra!");
             }
         }
+
+        public async Task<User?> GetCurrentUserAsync()
+        {
+            return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+        }
+
     }
 }
