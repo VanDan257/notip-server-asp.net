@@ -205,101 +205,101 @@ namespace notip_server.Controllers
             }
         }
 
-        //[Route("send-message")]
-        //[HttpPost]
-        //public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
-        //{
-        //    ResponseAPI responseAPI = new ResponseAPI();
-
-        //    try
-        //    {
-        //        string jsonMessage = HttpContext.Request.Form["data"]!;
-        //        var settings = new JsonSerializerSettings
-        //        {
-        //            NullValueHandling = NullValueHandling.Ignore,
-        //            MissingMemberHandling = MissingMemberHandling.Ignore,
-        //        };
-
-        //        MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
-        //        message.Attachments = Request.Form.Files.ToList();
-
-        //        string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-        //        Guid.TryParse(userSession, out var userId);
-        //        await _chatBoardService.SendMessage(userId, groupCode, message);
-
-        //        return Ok(responseAPI);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        responseAPI.Message = ex.Message;
-        //        return BadRequest(responseAPI);
-        //    }
-        //}
-
         [Route("send-message")]
         [HttpPost]
-        public IActionResult SendMessage([FromBody] EncryptedMessage encryptedMessage)
+        public async Task<IActionResult> SendMessage([FromQuery] Guid groupCode)
         {
+            ResponseAPI responseAPI = new ResponseAPI();
+
             try
             {
-                var aesKey = DecryptString(encryptedMessage.Key, privateKey);
-                var decryptedMessage = DecryptAES(encryptedMessage.Message, aesKey);
-                return Ok(new { message = decryptedMessage });
+                string jsonMessage = HttpContext.Request.Form["data"]!;
+                var settings = new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    MissingMemberHandling = MissingMemberHandling.Ignore,
+                };
+
+                MessageDto message = JsonConvert.DeserializeObject<MessageDto>(jsonMessage, settings);
+                message.Attachments = Request.Form.Files.ToList();
+
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _chatBoardService.SendMessage(userId, groupCode, message);
+
+                return Ok(responseAPI);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { error = ex.Message });
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
             }
         }
 
+        //[Route("send-message")]
+        //[HttpPost]
+        //public IActionResult SendMessage([FromBody] EncryptedMessage encryptedMessage)
+        //{
+        //    try
+        //    {
+        //        // Giải mã khóa AES bằng khóa riêng tư RSA
+        //        var aesKey = DecryptString(encryptedMessage.Key, privateKey);
 
-        private string DecryptString(string cipherText, string privateKey)
-        {
-            using (RSA rsa = RSA.Create())
-            {
-                rsa.ImportFromPem(privateKey.ToCharArray());
-                var bytesToDecrypt = Convert.FromBase64String(cipherText);
-                var decryptedBytes = rsa.Decrypt(bytesToDecrypt, RSAEncryptionPadding.Pkcs1);
-                return Encoding.UTF8.GetString(decryptedBytes);
-            }
-        }
+        //        // Giải mã tin nhắn bằng khóa AES
+        //        var decryptedMessage = DecryptAES(encryptedMessage.Message, aesKey);
 
-        private string DecryptAES(string cipherText, string key)
-        {
-            var fullCipher = Convert.FromBase64String(cipherText);
-            var iv = new byte[16];
-            var cipher = new byte[16];
+        //        // Xử lý tin nhắn đã giải mã theo yêu cầu
+        //        return Ok(new { message = decryptedMessage });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(new { error = ex.Message });
+        //    }
+        //}
 
-            Array.Copy(fullCipher, 0, iv, 0, iv.Length);
-            Array.Copy(fullCipher, iv.Length, cipher, 0, iv.Length);
 
-            var result = string.Empty;
+        //private string DecryptString(string cipherText, string privateKey)
+        //{
+        //    using (RSA rsa = RSA.Create())
+        //    {
+        //        rsa.ImportFromPem(privateKey.ToCharArray());
+        //        var bytesToDecrypt = Convert.FromBase64String(cipherText);
+        //        var decryptedBytes = rsa.Decrypt(bytesToDecrypt, RSAEncryptionPadding.Pkcs1);
+        //        return Encoding.UTF8.GetString(decryptedBytes);
+        //    }
+        //}
 
-            using (var aesAlg = Aes.Create())
-            {
-                using (var decryptor = aesAlg.CreateDecryptor(Encoding.UTF8.GetBytes(key), iv))
-                {
-                    using (var msDecrypt = new MemoryStream(cipher))
-                    {
-                        using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
-                        {
-                            using (var srDecrypt = new StreamReader(csDecrypt))
-                            {
-                                result = srDecrypt.ReadToEnd();
-                            }
-                        }
-                    }
-                }
-            }
+        //private string DecryptAES(string cipherText, string key)
+        //{
+        //    var fullCipher = Convert.FromBase64String(cipherText);
 
-            return result;
-        }
+        //    using (Aes aesAlg = Aes.Create())
+        //    {
+        //        aesAlg.Key = Encoding.UTF8.GetBytes(key);
+        //        aesAlg.Mode = CipherMode.ECB;
+        //        aesAlg.Padding = PaddingMode.PKCS7;
 
-        public class EncryptedMessage
-        {
-            public string Message { get; set; }
-            public string Key { get; set; }
-        }
+        //        using (var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+        //        {
+        //            using (var msDecrypt = new MemoryStream(fullCipher))
+        //            {
+        //                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+        //                {
+        //                    using (var srDecrypt = new StreamReader(csDecrypt))
+        //                    {
+        //                        return srDecrypt.ReadToEnd();
+        //                    }
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
+
+        //public class EncryptedMessage
+        //{
+        //    public string Message { get; set; }
+        //    public string Key { get; set; }
+        //}
 
         [Route("get-message-by-group/{groupCode}")]
         [HttpGet]
