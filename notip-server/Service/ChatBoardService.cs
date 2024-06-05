@@ -684,8 +684,7 @@ namespace notip_server.Service
 
                 if(request.groupCode != null)
                 {
-                    query = query.Where(x => x.GroupCode.Equals(request.groupCode))
-                            .Where(x => x.Group.GroupUsers.Any(y => y.UserCode.Equals(userCode)));
+                    query = query.Where(x => x.GroupCode.Equals(request.groupCode));
                 }
 
                 int total = await query.CountAsync();
@@ -695,32 +694,64 @@ namespace notip_server.Service
 
                 int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
 
-                var messages = await query
-                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
-                    .Take(request.PageSize.Value)
-                    .OrderBy(x => x.Created)
-                        .Select(x => new MessageDto()
-                        {
-                            Created = x.Created,
-                            Content = x.Content,
-                            CreatedBy = x.CreatedBy,
-                            GroupCode = x.GroupCode,
-                            Id = x.Id,
-                            Path = x.Path,
-                            Type = x.Type,
-                            UserCreatedBy = new UserDto()
-                            {
-                                Id = x.UserCreatedBy.Id,
-                                UserName = x.UserCreatedBy.UserName,
-                                Dob = x.UserCreatedBy.Dob,
-                                PhoneNumber = x.UserCreatedBy.PhoneNumber,
-                                Email = x.UserCreatedBy.Email,
-                                Address = x.UserCreatedBy.Address,
-                                Gender = x.UserCreatedBy.Gender,
-                                Avatar = x.UserCreatedBy.Avatar
+                // var messages = await query
+                //     .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                //     .Take(request.PageSize.Value)
+                //     .OrderByDescending(x => x.Created)
+                //         .Select(x => new MessageDto()
+                //         {
+                //             Created = x.Created,
+                //             Content = x.Content,
+                //             CreatedBy = x.CreatedBy,
+                //             GroupCode = x.GroupCode,
+                //             Id = x.Id,
+                //             Path = x.Path,
+                //             Type = x.Type,
+                //             UserCreatedBy = new UserDto()
+                //             {
+                //                 Id = x.UserCreatedBy.Id,
+                //                 UserName = x.UserCreatedBy.UserName,
+                //                 Dob = x.UserCreatedBy.Dob,
+                //                 PhoneNumber = x.UserCreatedBy.PhoneNumber,
+                //                 Email = x.UserCreatedBy.Email,
+                //                 Address = x.UserCreatedBy.Address,
+                //                 Gender = x.UserCreatedBy.Gender,
+                //                 Avatar = x.UserCreatedBy.Avatar
 
+                //             }
+                //         }).ToListAsync();
+
+                    var messages = await (from m in chatContext.Messages
+                        join g in chatContext.Groups on m.GroupCode equals g.Code
+                        join u in chatContext.Users on m.CreatedBy equals u.Id
+                        where m.GroupCode == request.groupCode
+                        orderby m.Created descending
+                        select new MessageDto
+                        {
+                            Created = m.Created,
+                            Content = m.Content,
+                            CreatedBy = m.CreatedBy,
+                            GroupCode = m.GroupCode,
+                            Id = m.Id,
+                            Path = m.Path,
+                            Type = m.Type,
+                            UserCreatedBy = new UserDto
+                            {
+                                Id = u.Id,
+                                UserName = u.UserName,
+                                Dob = u.Dob,
+                                PhoneNumber = u.PhoneNumber,
+                                Email = u.Email,
+                                Address = u.Address,
+                                Gender = u.Gender,
+                                Avatar = u.Avatar
                             }
-                        }).ToListAsync();
+                        })
+                        .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                        .Take(request.PageSize.Value)
+                        .ToListAsync();
+
+                // List<MessageDto> messagesDto = new List<MessageDto>();
 
                 return new PagingResult<MessageDto>(messages, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
             }
