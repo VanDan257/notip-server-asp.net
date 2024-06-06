@@ -26,35 +26,52 @@ namespace notip_server.Service
         /// <returns></returns>
         public async Task<PagingResult<FriendResponse>> GetListFriend(Guid userSession, GetContactRequest request)
         {
-            var query = from user in _chatContext.Users
-                        join friend in _chatContext.Friends
-                        on new { Code = user.Id } equals new { Code = friend.SenderCode } into friendsGroup
-                        from friend in friendsGroup.DefaultIfEmpty()
-                        where (user.Id == friend.SenderCode || user.Id == friend.ReceiverCode)
-                                && friend.Status == Constants.FriendStatus.FRIEND
-                        select new FriendResponse
-                        {
-                            Id = user.Id,
-                            UserName = user.UserName,
-                            Dob = user.Dob,
-                            PhoneNumber = user.PhoneNumber,
-                            Email = user.Email,
-                            Address = user.Address,
-                            Avatar = user.Avatar,
-                            IsFriend = true
-                        };
-            int total = await query.CountAsync();
+            var listFriend1 = await _chatContext.Friends.Where(x => x.SenderCode == userSession && x.Status == Constants.FriendStatus.FRIEND)
+                .Join(_chatContext.Users,
+                    friend => friend.ReceiverCode,
+                    user => user.Id,
+                    (friend, user) => new FriendResponse()
+                    {
+                        Id = user.Id,
+                        UserName = user.UserName,
+                        Dob = user.Dob,
+                        PhoneNumber = user.PhoneNumber,
+                        Email = user.Email,
+                        Address = user.Address,
+                        Avatar = user.Avatar,
+                        IsFriend = true
+                    })
+                .ToListAsync();
+            var listFriend2 = await _chatContext.Friends.Where(x => x.ReceiverCode == userSession && x.Status == Constants.FriendStatus.FRIEND)
+                .Join(_chatContext.Users,
+                    friend => friend.SenderCode,
+                    user => user.Id,
+                    (friend, user) => new FriendResponse()
+                    {
+                        Id = user.Id,
+                        UserName = user.UserName,
+                        Dob = user.Dob,
+                        PhoneNumber = user.PhoneNumber,
+                        Email = user.Email,
+                        Address = user.Address,
+                        Avatar = user.Avatar,
+                        IsFriend = true
+                    })
+                .ToListAsync();
+            var friends = listFriend1.Concat(listFriend2).ToList();
+
+            int total = friends.Count();
 
             if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
             if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
 
             int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
 
-            var friends = await query
+            friends = friends
                 .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                 .Take(request.PageSize.Value)
                 .OrderBy(x => x.UserName)
-            .ToListAsync();
+                .ToList();
 
             return new PagingResult<FriendResponse>(friends, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
         }

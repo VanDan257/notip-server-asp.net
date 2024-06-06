@@ -1,4 +1,7 @@
-﻿namespace notip_server.ViewModel.ChatBoard
+﻿using notip_server.Dto;
+using notip_server.Models;
+
+namespace notip_server.ViewModel.ChatBoard
 {
     public class GroupAdminResponse
     {
@@ -19,5 +22,8 @@
         public int NumberOfMessage { get; set; }
 
         public int NumberOfMember { get; set; }
+
+        public ICollection<MessageDto> Messages { get; set; }
+        public ICollection<UserDto> Users { get; set; }
     }
 }

@@ -600,7 +600,7 @@ namespace notip_server.Service
                             }
                         }
                         message.Path = $"Attachments/{groupCode}/{DateTime.Now.Year}/{message.Attachments[0].FileName}";
-                        message.Content = message.Attachments[0].FileName;
+                        //message.Content = message.Attachments[0].FileName;
 
                         //string pathFile = $"{groupCode}/{DateTime.Now.Year}";
                         //await _aswS3Service.UploadBlobFile(message.Attachments[0], pathFile);
@@ -676,7 +676,7 @@ namespace notip_server.Service
         /// <param name="userCode">User hiện tại đang đăng nhập</param>
         /// <param name="groupCode">Mã nhóm</param>
         /// <returns>Danh sách tin nhắn</returns>
-        public async Task<PagingResult<MessageDto>> GetMessageByGroup(Guid userCode, GetMessageRequest request)
+        public async Task<PagingResult<MessageDto>> GetMessageByGroup(GetMessageRequest request)
         {
             try
             {
@@ -694,36 +694,32 @@ namespace notip_server.Service
 
                 int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
 
-                var messages = await (from m in chatContext.Messages
-                    join g in chatContext.Groups on m.GroupCode equals g.Code
-                    join u in chatContext.Users on m.CreatedBy equals u.Id
-                    where m.GroupCode == request.groupCode
-                    orderby m.Created descending
-                    select new MessageDto
+                var messages = await query
+                    //.Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    //.Take(request.PageSize.Value)
+                    .OrderBy(x => x.Created)
+                    .Select(x => new MessageDto()
                     {
-                        Created = m.Created,
-                        Content = m.Content,
-                        CreatedBy = m.CreatedBy,
-                        GroupCode = m.GroupCode,
-                        Id = m.Id,
-                        Path = m.Path,
-                        Type = m.Type,
-                            UserCreatedBy = new UserDto
-                            {
-                                Id = u.Id,
-                                UserName = u.UserName,
-                                Dob = u.Dob,
-                                PhoneNumber = u.PhoneNumber,
-                                Email = u.Email,
-                                Address = u.Address,
-                                Gender = u.Gender,
-                                Avatar = u.Avatar
-                            }
-                        })
-                        .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
-                        .Take(request.PageSize.Value)
-                        .Reverse()
-                        .ToListAsync();
+                        Created = x.Created,
+                        Content = x.Content,
+                        CreatedBy = x.CreatedBy,
+                        GroupCode = x.GroupCode,
+                        Id = x.Id,
+                        Path = x.Path,
+                        Type = x.Type,
+                        UserCreatedBy = new UserDto()
+                        {
+                            Id = x.UserCreatedBy.Id,
+                            UserName = x.UserCreatedBy.UserName,
+                            Dob = x.UserCreatedBy.Dob,
+                            PhoneNumber = x.UserCreatedBy.PhoneNumber,
+                            Email = x.UserCreatedBy.Email,
+                            Address = x.UserCreatedBy.Address,
+                            Gender = x.UserCreatedBy.Gender,
+                            Avatar = x.UserCreatedBy.Avatar
+
+                        }
+                    }).ToListAsync();
 
                 return new PagingResult<MessageDto>(messages, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
             }
@@ -785,6 +781,7 @@ namespace notip_server.Service
             }
         }
 
+        #region admin
         /// <summary>
         /// Lấy tất cả phòng chat
         /// </summary>
@@ -830,5 +827,63 @@ namespace notip_server.Service
             }
         }
 
+        public async Task<GroupAdminResponse> GetDetailChatRoom(Guid groupCode)
+        {
+            try
+            {
+                var group = await chatContext.Groups
+                    .Where(x => x.Code == groupCode)
+                    .Select(x => new GroupAdminResponse()
+                    {
+                        Code = x.Code,
+                        Type = x.Type,
+                        Avatar = "images/no_image.jpg",
+                        Name = x.Type == Constants.GroupType.SINGLE ? String.Join(", ", x.GroupUsers.Select(x => x.User.UserName)) : x.Name,
+                        Created = x.Created,
+                        CreatedBy = x.CreatedBy,
+                        LastActive = x.LastActive,
+                        NumberOfMessage = x.Messages.Count,
+                        NumberOfMember = x.GroupUsers.Count
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (group != null)
+                {
+                    var message = await GetMessageByGroup(new GetMessageRequest { groupCode = groupCode });
+                    group.Messages = message.Items;
+
+                    var groupUsers = chatContext.GroupUsers
+                            .Where(x => x.GroupCode == groupCode)
+                            .Join(chatContext.Users,
+                                grpUsers => grpUsers.UserCode,
+                                users => users.Id,
+                                (grpUsers, users) => new UserDto
+                                {
+                                    Id = users.Id,
+                                    UserName = users.UserName,
+                                    Dob = users.Dob,
+                                    PhoneNumber = users.PhoneNumber,
+                                    Email = users.Email,
+                                    Address = users.Address,
+                                    Avatar = users.Avatar,
+                                    Gender = users.Gender
+                                })
+                            .ToList();
+                    group.Users = groupUsers;
+
+                    return group;
+                }
+                else
+                {
+                    throw new Exception("Có lỗi xảy ra!");
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
+
+        #endregion
     }
 }

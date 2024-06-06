@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
 
 namespace notip_server.Controllers.Admin
@@ -24,6 +25,24 @@ namespace notip_server.Controllers.Admin
             try
             {
                 responseAPI.Data = await _chatBoardService.GetAllChatRoom(request);
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpGet("get-detail-chatroom/{groupCode}")]
+        public async Task<IActionResult> GetDetailChatRoom(string groupCode)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                Guid.TryParse(groupCode, out Guid code);
+                responseAPI.Data = await _chatBoardService.GetDetailChatRoom(code);
 
                 return Ok(responseAPI);
             }

@@ -328,9 +328,7 @@ namespace notip_server.Controllers
 
             try
             {
-                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
-                Guid.TryParse(userSession, out var userId);
-                responseAPI.Data = await _chatBoardService.GetMessageByGroup(userId, request);
+                responseAPI.Data = await _chatBoardService.GetMessageByGroup(request);
 
                 return Ok(responseAPI);
             }

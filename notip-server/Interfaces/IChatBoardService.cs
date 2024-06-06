@@ -17,8 +17,12 @@ namespace notip_server.Interfaces
         Task OutGroup(Guid userSession, Guid groupCode);
         Task UpdateGroupAvatar(UpdateGroupAvatarRequest request);
         Task SendMessage(Guid userSession, Guid groupCode, MessageDto message);
-        Task<PagingResult<MessageDto>> GetMessageByGroup(Guid userSession, GetMessageRequest request);
+        Task<PagingResult<MessageDto>> GetMessageByGroup(GetMessageRequest request);
         Task<PagingResult<GroupAdminResponse>> GetAllChatRoom(PagingRequest request);
+
+        #region Admin
         Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request);
+        Task<GroupAdminResponse> GetDetailChatRoom(Guid groupCode);
+        #endregion
     }
 }

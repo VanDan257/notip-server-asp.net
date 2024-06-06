@@ -130,6 +130,7 @@ namespace notip_server.Service
                         Gender = x.Gender,
                         PhoneNumber = x.PhoneNumber
                     })
+                    .OrderBy(x => x.UserName)
                     .ToListAsync();
 
                 if (users != null)

@@ -24,6 +24,10 @@ namespace notip_server.Data
 
         public DbSet<Friend> Friends { get; set; }
 
+        //public DbSet<TypeGroup> TypeGroup { get; set; }
+
+        //public DbSet<FriendStatus> FriendStatuses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
