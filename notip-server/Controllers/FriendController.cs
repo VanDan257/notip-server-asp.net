@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.Middlewares;
 using notip_server.ViewModel.Friend;
 using notip_server.ViewModel.User;
 
@@ -9,6 +10,7 @@ namespace notip_server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ServiceFilter(typeof(ClientRoleMiddleware))]
     public class FriendController : ControllerBase
     {
         private readonly IFriendService friendService;

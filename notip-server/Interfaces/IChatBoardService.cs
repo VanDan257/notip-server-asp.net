@@ -23,6 +23,7 @@ namespace notip_server.Interfaces
         #region Admin
         Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request);
         Task<GroupAdminResponse> GetDetailChatRoom(Guid groupCode);
+        Task<List<MessageDto>> GetAllMessages();
         #endregion
     }
 }

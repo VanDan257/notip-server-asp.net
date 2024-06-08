@@ -1,10 +1,14 @@
 ﻿using Amazon;
 using Amazon.Extensions.NETCore.Setup;
 using Amazon.S3;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using notip_server.Data;
 using notip_server.Extensions;
 using notip_server.Hubs;
+using notip_server.Interfaces;
+using notip_server.Service;
 using notip_server.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,7 +29,14 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddApplicationServices()
     .AddIdentityServices()
-    .AddAwsS3Services(builder.Configuration);
+    .AddAwsS3Services(builder.Configuration)
+    .AddEmailService(builder.Configuration);
+
+// Thiết lập thời hạn sống token là 1 giờ
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(24);
+});
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -33,14 +44,6 @@ builder.Services.AddControllers();
 builder.Services.AddSingleton<ChatHub>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-
-#region EntityFramework Core
-builder.Services.AddDbContext<DbChatContext>(option =>
-{
-    option.UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString))
-    .LogTo(Console.WriteLine, LogLevel.Information);
-});
-#endregion
 
 var app = builder.Build();
 
@@ -57,13 +60,14 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors(policy);
 
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
     endpoints.MapHub<ChatHub>("/chatHub");
+
 });
 
 app.MapControllers();

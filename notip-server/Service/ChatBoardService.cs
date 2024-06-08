@@ -782,6 +782,7 @@ namespace notip_server.Service
         }
 
         #region admin
+
         /// <summary>
         /// Lấy tất cả phòng chat
         /// </summary>
@@ -884,6 +885,41 @@ namespace notip_server.Service
             }
         }
 
+        public async Task<List<MessageDto>> GetAllMessages()
+        {
+            try
+            {
+                var messages = await chatContext.Messages
+                    .Select(x => new MessageDto()
+                    {
+                        Created = x.Created,
+                        Content = x.Content,
+                        CreatedBy = x.CreatedBy,
+                        GroupCode = x.GroupCode,
+                        Id = x.Id,
+                        Path = x.Path,
+                        Type = x.Type,
+                        UserCreatedBy = new UserDto()
+                        {
+                            Id = x.UserCreatedBy.Id,
+                            UserName = x.UserCreatedBy.UserName,
+                            Dob = x.UserCreatedBy.Dob,
+                            PhoneNumber = x.UserCreatedBy.PhoneNumber,
+                            Email = x.UserCreatedBy.Email,
+                            Address = x.UserCreatedBy.Address,
+                            Gender = x.UserCreatedBy.Gender,
+                            Avatar = x.UserCreatedBy.Avatar
+
+                        }
+                    })
+                    .ToListAsync();
+                return messages;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
         #endregion
     }
 }

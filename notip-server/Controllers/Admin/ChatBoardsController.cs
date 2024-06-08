@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.Middlewares;
 using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
 
@@ -9,6 +10,7 @@ namespace notip_server.Controllers.Admin
 {
     [Route("api/admin/[controller]")]
     [ApiController]
+    [ServiceFilter(typeof(AdminRoleMiddleware))]
     public class ChatBoardsController : ControllerBase
     {
         private IChatBoardService _chatBoardService;
@@ -52,5 +54,22 @@ namespace notip_server.Controllers.Admin
                 return BadRequest(responseAPI);
             }
         }
+
+        //[HttpGet("get-all-messages")]
+        //public async Task<IActionResult> GetAllMessages()
+        //{
+        //    ResponseAPI responseAPI = new ResponseAPI();
+        //    try
+        //    {
+        //        var messages = _chatBoardService.GetAllMessages();
+        //        responseAPI.Data = messages;
+        //        return Ok(responseAPI);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        responseAPI.Message = ex.Message;
+        //        return BadRequest(responseAPI);
+        //    }
+        //}
     }
 }

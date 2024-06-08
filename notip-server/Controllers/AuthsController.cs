@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
-using notip_server.Models;
 using notip_server.Interfaces;
-using notip_server.Service;
-using notip_server.Interfaces;
-using System;
 using notip_server.ViewModel.Auth;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Identity.Data;
+using notip_server.Middlewares;
 
 namespace notip_server.Controllers
 {
@@ -69,6 +66,49 @@ namespace notip_server.Controllers
             {
                 AccessToken accessToken = await _authService.Login(request);
                 responseAPI.Data = accessToken;
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpGet("auths/forgot-password/{email}")]
+        public async Task<IActionResult> ForgetPassword(string email)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                await _authService.ForgetPassword(email);
+                responseAPI.Status = 200;
+
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpPost("auths/reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                if(await _authService.ResetPassword(request))
+                {
+                    responseAPI.Message = "Lấy lại mật khẩu thành công";
+                }
+                else
+                {
+                    responseAPI.Message = "Lấy lại mật khẩu không thành công";
+                    return BadRequest(responseAPI);
+                }
 
                 return Ok(responseAPI);
             }

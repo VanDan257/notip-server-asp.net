@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Amazon.S3.Model;
+using System;
 
 namespace notip_server.Utils
 {
@@ -28,6 +29,13 @@ namespace notip_server.Utils
         {
             public const string ASC = "ASC";
             public const string DESC = "DESC";
+        }
+
+        public class Role
+        {
+            public const string CLIENT = "CLIENT";
+            public const string ADMIN = "ADMIN";
+            public const string MODERATOR = "MODERATOR";
         }
 
         public const string AVATAR_DEFAULT = "images/no_image.jpg";

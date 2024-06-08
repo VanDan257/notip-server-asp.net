@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.Middlewares;
 using notip_server.Models;
 using notip_server.ViewModel.Auth;
 using notip_server.ViewModel.User;
@@ -13,6 +14,7 @@ namespace notip_server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ServiceFilter(typeof(ClientRoleMiddleware))]
     public class UsersController : ControllerBase
     {
         //private readonly UserManager<User> _userManager;

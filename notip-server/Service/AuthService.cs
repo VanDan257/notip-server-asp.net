@@ -9,20 +9,25 @@ using notip_server.ViewModel.Auth;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Identity.Data;
 
 namespace notip_server.Service
 {
     public class AuthService : IAuthService
     {
         private readonly DbChatContext chatContext;
-        protected readonly IPasswordService _passwordService;
+        private readonly UserManager<User> _userManager;
+        private readonly IPasswordService _passwordService;
+        private readonly ISendMailService _sendMailService;
 
-        public AuthService(DbChatContext chatContext, IPasswordService passwordService)
+        public AuthService(DbChatContext chatContext, IPasswordService passwordService, ISendMailService sendMailService, UserManager<User> userManager)
         {
             this.chatContext = chatContext;
             _passwordService = passwordService;
+            _sendMailService = sendMailService;
+            _userManager = userManager;
         }
 
         /// <summary>
@@ -41,17 +46,40 @@ namespace notip_server.Service
             // 2. Validate the password is correct
             if (!_passwordService.VerifyPassword(user.PasswordHash, user.PasswordSalt, request.Password))
             {
+                user.AccessFailedCount = user.AccessFailedCount + 1;
+
+                if(user.AccessFailedCount == 3) 
+                {
+                    string htmlBodyMail = "<h3>Có 1 truy cập đang cố gắng đăng nhập vào tài khoản của bạn! " +
+                        "<br>Hãy đổi mật khẩu mạnh nếu đó không phải bạn.</h3>" +
+                        "<h3>Nếu bạn quên mật khẩu, hãy lấy click vào đường link dưới đây để lấy lại mật khẩu</h3>" +
+                        "<a href=\"http://localhost:4200/forgot-passsword\">Lấy lại mật khẩu</a>";
+                    await _sendMailService.SendEmailAsync(user.Email, "Cảnh báo đăng nhập!", htmlBodyMail);
+                }
+                
+                await chatContext.SaveChangesAsync();
                 throw new Exception("Mật khẩu không chính xác.");
             }
 
+            if(user.AccessFailedCount > 0)
+            {
+                user.AccessFailedCount = 0;
+            }
             user.LastLogin = DateTime.Now;
             await chatContext.SaveChangesAsync();
 
-            DateTime expirationDate = DateTime.Now.Date.AddMinutes(EnviConfig.ExpirationInMinutes);
-            long expiresAt = (long)(expirationDate - new DateTime(1970, 1, 1)).TotalSeconds;
+            var role = await chatContext.UserRoles.Where(u => u.UserId == user.Id)
+                .Join(chatContext.Roles,
+                    userRoles => userRoles.RoleId,
+                    roles => roles.Id,
+                    (userRoles, roles) => roles.NormalizedName)
+                .FirstOrDefaultAsync();
 
             var jwtTokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(EnviConfig.SecretKey);
+
+            DateTime expirationDate = DateTime.Now.Date.AddMinutes(EnviConfig.ExpirationInMinutes);
+            long expiresAt = (long)(expirationDate - new DateTime(1970, 1, 1)).TotalSeconds;
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -59,6 +87,7 @@ namespace notip_server.Service
                 {
                     new Claim(ClaimTypes.Sid, user.Id.ToString()),
                     new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.Role, role),
                     new Claim(ClaimTypes.Expiration, expiresAt.ToString())
 
                 }),
@@ -73,8 +102,7 @@ namespace notip_server.Service
                 Id = user.Id,
                 UserName = user.UserName,
                 Avatar = user.Avatar,
-                Token = jwtTokenHandler.WriteToken(token),
-
+                Token = jwtTokenHandler.WriteToken(token)
             };
         }
 
@@ -98,10 +126,83 @@ namespace notip_server.Service
                 PasswordSalt = saltPassword,
                 PasswordHash = hashPassword,
                 Avatar = Constants.AVATAR_DEFAULT,
+                NormalizedEmail = request.Email.ToLower(),
+                NormalizedUserName = request.UserName.ToLower(),
             };
 
             await chatContext.Users.AddAsync(newUser);
             await chatContext.SaveChangesAsync();
+
+            await _userManager.UpdateSecurityStampAsync(newUser);
+        }
+
+        /// <summary>
+        /// Quên mật khẩu
+        /// </summary>
+        /// <param name="email"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task ForgetPassword(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+
+                if (user == null)
+                    throw new Exception("Email không tồn tại!");
+
+                // Kiểm tra nếu thuộc tính SecurityStamp của người dùng là null, cập nhật nó trước khi thay đổi email
+                if (user.SecurityStamp == null)
+                {
+                    await _userManager.UpdateSecurityStampAsync(user);
+                }
+
+                string tokenConfirm = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+                string encodeToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(tokenConfirm));
+
+                string ressetPasswordUrl = $"http://localhost:4200/reset-password?email={email}&token={encodeToken}";
+
+                string htmlBodyMail = $"Hãy click vào đường dẫn sau để thiết lập lại mật khẩu: <a href=\"{ressetPasswordUrl}\">Reset password</a>";
+
+                await _sendMailService.SendEmailAsync(email, "Thiết lập lại mật khẩu!", htmlBodyMail);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<bool> ResetPassword(ResetPasswordRequest request) 
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+
+            if(user is null)
+            {
+                throw new Exception("Email không tồn tại!");
+            }
+
+            if (string.IsNullOrEmpty(request.ResetCode))
+            {
+                throw new Exception("Token không hợp lệ");
+            }
+
+            string decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.ResetCode));
+
+            var identityResult = await _userManager.ResetPasswordAsync(user, decodedToken, request.NewPassword);
+
+            if (identityResult.Succeeded)
+            {
+                return true;
+            }
+            else
+            {
+                foreach (var error in identityResult.Errors)
+                {
+                    Console.WriteLine("ResetPasswordAsync: ", error.Description);
+                }
+            }
+            return false;
         }
     }
 }

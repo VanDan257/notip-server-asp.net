@@ -8,8 +8,8 @@ namespace notip_server.Service
         public string HashPassword(string password, string salt)
         {
             byte[] saltBytes = Convert.FromBase64String(salt);
-            var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 10000, HashAlgorithmName.SHA256);
-            byte[] hash = pbkdf2.GetBytes(20); // 20 bytes for SHA-1
+            var pbkdf2 = new Rfc2898DeriveBytes(password, saltBytes, 10000, HashAlgorithmName.SHA256); // Sử dụng PBKDF2 với SHA-256 để băm mật khẩu cùng với salt được cung cấp.
+            byte[] hash = pbkdf2.GetBytes(20);
             return Convert.ToBase64String(hash);
         }
 

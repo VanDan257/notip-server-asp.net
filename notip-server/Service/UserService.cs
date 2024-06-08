@@ -12,6 +12,7 @@ using notip_server.ViewModel.Common;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
 using System.Runtime.ExceptionServices;
+using static notip_server.Utils.Constants;
 
 namespace notip_server.Service
 {
@@ -244,10 +245,49 @@ namespace notip_server.Service
             }
         }
 
-        public async Task<User?> GetCurrentUserAsync()
+        #region Admin
+
+        public async Task<List<ResponseUserAdminHome>> GetAllUser(PagingRequest request)
         {
-            return await _userManager.GetUserAsync(_httpContextAccessor.HttpContext.User);
+            try
+            {
+
+                //var query = chatContext.Users
+                //    .AsQueryable();
+
+                var query = from user in chatContext.Users
+                            join userRole in chatContext.UserRoles
+                           on user.Id equals userRole.UserId
+                            join role in chatContext.Roles
+                            on userRole.RoleId equals role.Id
+                            where role.NormalizedName == Constants.Role.CLIENT
+                            select new ResponseUserAdminHome
+                            {
+                                User = user,
+                                MessageCount = user.Messages.Count
+                            };
+
+                int total = await query.CountAsync();
+
+                if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
+
+                int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
+
+                var users = await query
+                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    .Take(request.PageSize.Value)
+                    .OrderBy(x => x.User.UserName)
+                    .ToListAsync();
+
+                return users;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
         }
 
+        #endregion
     }
 }

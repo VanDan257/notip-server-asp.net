@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using notip_server.Dto;
 using notip_server.Interfaces;
+using notip_server.Middlewares;
 using notip_server.Service;
 using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
@@ -13,12 +14,13 @@ namespace notip_server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ServiceFilter(typeof(ClientRoleMiddleware))] // Áp dụng middleware filter trên controller
     public class ChatBoardsController : ControllerBase
     {
         private IChatBoardService _chatBoardService;
         private readonly IHttpContextAccessor _contextAccessor;
 
-        private readonly string privateKey = System.IO.File.ReadAllText("private_key.pem");
+        //private readonly string privateKey = System.IO.File.ReadAllText("private_key.pem");
 
         public ChatBoardsController(IChatBoardService chatBoardService, IHttpContextAccessor contextAccessor)
         {

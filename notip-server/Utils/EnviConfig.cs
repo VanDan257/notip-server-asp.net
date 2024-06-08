@@ -11,6 +11,11 @@
         public static string AccessKeyAwsS3 { get; private set; }
         public static string SecretKeyAwsS3 { get; private set; }
         public static string BucketNameAwsS3 { get; private set; }
+        public static string Mail { get; set; }
+        public static string DisplayName { get; set; }
+        public static string Password { get; set; }
+        public static string Host { get; set; }
+        public static int Port { get; set; }
 
         public static void Config(IConfiguration configuration)
         {
@@ -23,6 +28,12 @@
             AccessKeyAwsS3 = configuration["AWS:AccessKey"];
             SecretKeyAwsS3 = configuration["AWS:SecretKey"];
             BucketNameAwsS3 = configuration["AWS:BucketName"];
+            Mail = configuration["MailSetting:Mail"];
+            DisplayName = configuration["MailSetting:DisplayName"];
+            Password = configuration["MailSetting:Password"];
+            Host = configuration["MailSetting:Host"];
+            Port = int.Parse(configuration["MailSetting:Port"]);
+
         }
     }
 }

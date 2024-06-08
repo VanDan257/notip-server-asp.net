@@ -1,5 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using notip_server.Data;
+using notip_server.Models;
+using notip_server.Utils;
 
 namespace notip_server.Extensions
 {
@@ -7,8 +12,24 @@ namespace notip_server.Extensions
     {
         public static IServiceCollection AddIdentityServices(this IServiceCollection services)
         {
-            services.AddEndpointsApiExplorer();
 
+            services.AddDbContext<DbChatContext>(option =>
+            {
+                option.UseMySql(EnviConfig.DbConnectionString, ServerVersion.AutoDetect(EnviConfig.DbConnectionString))
+                .LogTo(Console.WriteLine, LogLevel.Information);
+            });
+            // Thêm Identity
+            services.AddIdentity<User, Role>(options =>
+            {
+                options.Password.RequireDigit = false;
+                options.Password.RequiredLength = 1;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.User.AllowedUserNameCharacters = null;
+            }).AddEntityFrameworkStores<DbChatContext>().AddDefaultTokenProviders();
+
+            services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo
@@ -47,11 +68,7 @@ namespace notip_server.Extensions
                 .AddJwtBearer();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            //services.AddControllers()
-            //    .AddNewtonsoftJson(options =>
-            //    {
-            //        options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-            //    });
+            services.AddTransient<IPasswordHasher<User>, CustomPasswordHasher<User>>();
 
             return services;
         }
