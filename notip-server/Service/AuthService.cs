@@ -204,5 +204,23 @@ namespace notip_server.Service
             }
             return false;
         }
+
+        public async Task UserAccessHub(Guid userId)
+        {
+            try
+            {
+                var loginUser = new LoginUserHistory
+                {
+                    UserId = userId,
+                    LoginTime = DateTime.Now
+                };
+                await chatContext.AddAsync(loginUser);
+                await chatContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
     }
 }

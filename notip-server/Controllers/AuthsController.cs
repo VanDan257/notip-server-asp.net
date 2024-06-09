@@ -13,11 +13,13 @@ namespace notip_server.Controllers
     {
         private IAuthService _authService;
         private IWebHostEnvironment _webHostEnvironment;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-        public AuthsController(IAuthService authService,IWebHostEnvironment webHostEnvironment)
+        public AuthsController(IAuthService authService, IWebHostEnvironment webHostEnvironment, IHttpContextAccessor contextAccessor)
         {
             _authService = authService;
             _webHostEnvironment = webHostEnvironment;
+            _contextAccessor = contextAccessor;
         }
 
 
@@ -134,6 +136,25 @@ namespace notip_server.Controllers
                 var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
 
                 return File(fileStream, "application/octet-stream", fileName[fileName.Length - 1]);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpPost("user-access-hub")]
+        public async Task<IActionResult> UserAccessHub()
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                string userSession = SystemAuthorization.GetCurrentUser(_contextAccessor);
+                Guid.TryParse(userSession, out var userId);
+                await _authService.UserAccessHub(userId);
+
+                return Ok(responseAPI);
             }
             catch (Exception ex)
             {

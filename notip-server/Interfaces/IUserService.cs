@@ -15,7 +15,7 @@ namespace notip_server.Interfaces
 
         #region Admin
 
-        Task<List<ResponseUserAdminHome>> GetAllUser(PagingRequest request);
+        Task<PagingResult<ResponseUserAdminHome>> GetAllUser(PagingRequest request);
 
         #endregion
     }

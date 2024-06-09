@@ -11,5 +11,6 @@ namespace notip_server.Interfaces
         Task SignUp(SignUpRequest request);
         Task ForgetPassword(string email);
         Task<bool> ResetPassword(ResetPasswordRequest request);
+        Task UserAccessHub(Guid userId);
     }
 }

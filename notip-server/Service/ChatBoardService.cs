@@ -145,7 +145,7 @@ namespace notip_server.Service
 
             if (users.Count > 0)
             {
-                for(int i = 0; i < users.Count; i++)
+                for (int i = 0; i < users.Count; i++)
                 {
                     Console.Write(users[i].Id);
                     // Lấy ra group chat riêng tư của người dùng hiện tại và contact
@@ -198,7 +198,7 @@ namespace notip_server.Service
                 Group grp = await chatContext.Groups
                     .FirstOrDefaultAsync(x => x.Code == groupCode);
 
-                if(grp != null)
+                if (grp != null)
                 {
                     var group = new GroupDto
                     {
@@ -321,7 +321,7 @@ namespace notip_server.Service
             //Lấy thông tin nhóm chat
             Group group = await chatContext.Groups.Include(s => s.GroupUsers).ThenInclude(u => u.User).FirstOrDefaultAsync(x => x.Code.Equals(groupCode));
 
-            if(group == null)
+            if (group == null)
             {
                 throw new Exception("Không tồn tại nhóm chat");
             }
@@ -414,13 +414,13 @@ namespace notip_server.Service
             {
                 var group = await chatContext.Groups.FindAsync(request.Code);
 
-                if(group == null)
+                if (group == null)
                 {
                     throw new Exception("Không tìm thấy nhóm");
                 }
 
                 List<GroupUser> lstGroupUser = new List<GroupUser>();
-                for(int i = 0; i < request.Users.Count; i++)
+                for (int i = 0; i < request.Users.Count; i++)
                 {
                     lstGroupUser.Add(new GroupUser
                     {
@@ -450,7 +450,7 @@ namespace notip_server.Service
             try
             {
                 var groupUser = await chatContext.GroupUsers.FirstOrDefaultAsync(x => x.UserCode == userSession && x.GroupCode == groupCode);
-                if(groupUser == null)
+                if (groupUser == null)
                 {
                     throw new Exception("Nhóm chat không tồn tại");
                 }
@@ -476,7 +476,7 @@ namespace notip_server.Service
             {
                 Group grp = await chatContext.Groups
                     .FirstOrDefaultAsync(x => x.Code == request.Code);
-                if( grp == null)
+                if (grp == null)
                 {
                     throw new Exception("Không tìm thấy nhóm chat");
                 }
@@ -636,7 +636,7 @@ namespace notip_server.Service
                         .Join(chatContext.Users,
                             grpUsers => grpUsers.UserCode,
                             users => users.Id,
-                            (grpUsers, users) => 
+                            (grpUsers, users) =>
                                 users.Id
                             )
                         .ToList();
@@ -682,7 +682,7 @@ namespace notip_server.Service
             {
                 var query = chatContext.Messages.AsQueryable();
 
-                if(request.groupCode != null)
+                if (request.groupCode != null)
                 {
                     query = query.Where(x => x.GroupCode.Equals(request.groupCode));
                 }
@@ -797,12 +797,12 @@ namespace notip_server.Service
 
                 int total = await query.CountAsync();
 
-                if(request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
                 if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
 
                 int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
 
-                
+
                 var groups = await query
                     .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                     .Take(request.PageSize.Value)
@@ -879,7 +879,7 @@ namespace notip_server.Service
                     throw new Exception("Có lỗi xảy ra!");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception("Có lỗi xảy ra!");
             }
@@ -914,6 +914,22 @@ namespace notip_server.Service
                     })
                     .ToListAsync();
                 return messages;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
+
+        public async Task<List<TrafficStatisticsResult>> TrafficStatistics(TrafficStatisticsRequest request)
+        {
+            try
+            {
+                var messageStatistics = await chatContext.TrafficStatisticsResult
+                    .FromSqlRaw("CALL GetStatisticsMessageUser({0}, {1})", request.StatisticByYear ?? 0, request.StatisticByMonth ?? 0)
+                    .ToListAsync();
+
+                return messageStatistics;
             }
             catch (Exception ex)
             {

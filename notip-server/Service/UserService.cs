@@ -247,7 +247,7 @@ namespace notip_server.Service
 
         #region Admin
 
-        public async Task<List<ResponseUserAdminHome>> GetAllUser(PagingRequest request)
+        public async Task<PagingResult<ResponseUserAdminHome>> GetAllUser(PagingRequest request)
         {
             try
             {
@@ -257,10 +257,11 @@ namespace notip_server.Service
 
                 var query = from user in chatContext.Users
                             join userRole in chatContext.UserRoles
-                           on user.Id equals userRole.UserId
+                            on user.Id equals userRole.UserId
                             join role in chatContext.Roles
                             on userRole.RoleId equals role.Id
                             where role.NormalizedName == Constants.Role.CLIENT
+                            orderby user.Messages.Count
                             select new ResponseUserAdminHome
                             {
                                 User = user,
@@ -277,10 +278,9 @@ namespace notip_server.Service
                 var users = await query
                     .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
                     .Take(request.PageSize.Value)
-                    .OrderBy(x => x.User.UserName)
                     .ToListAsync();
 
-                return users;
+                return new PagingResult<ResponseUserAdminHome>(users, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
             }
             catch (Exception ex)
             {

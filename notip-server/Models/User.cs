@@ -27,5 +27,7 @@ namespace notip_server.Models
         public virtual ICollection<GroupUser> GroupUsers { get; set; }
 
         public virtual ICollection<Message> Messages { get; set; }
+
+        public virtual ICollection<LoginUserHistory> LoginUserHistories { get; set; }
     }
 }

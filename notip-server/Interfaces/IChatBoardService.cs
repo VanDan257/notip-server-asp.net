@@ -1,5 +1,6 @@
 ﻿using Azure.Core;
 using notip_server.Dto;
+using notip_server.Models;
 using notip_server.ViewModel.ChatBoard;
 using notip_server.ViewModel.Common;
 
@@ -24,6 +25,7 @@ namespace notip_server.Interfaces
         Task<GroupDto> UpdatePhotoChat(UpdateGroupAvatarRequest request);
         Task<GroupAdminResponse> GetDetailChatRoom(Guid groupCode);
         Task<List<MessageDto>> GetAllMessages();
+        Task<List<TrafficStatisticsResult>> TrafficStatistics(TrafficStatisticsRequest request);
         #endregion
     }
 }

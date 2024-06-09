@@ -10,6 +10,11 @@ namespace notip_server.Middlewares
     {
         private readonly IJwtService _jwtService;
 
+        public AdminRoleMiddleware(IJwtService jwtService)
+        {
+            _jwtService = jwtService;
+        }
+
         public override bool Equals(object? obj)
         {
             return obj is AdminRoleMiddleware middleware &&

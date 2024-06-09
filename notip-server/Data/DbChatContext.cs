@@ -28,13 +28,17 @@ namespace notip_server.Data
 
         //public DbSet<FriendStatus> FriendStatuses { get; set; }
 
-        //public DbSet<LoginUserHistory> LoginUserHistories { get; set; }
+        public DbSet<LoginUserHistory> LoginUserHistories { get; set; }
+
+        public DbSet<TrafficStatisticsResult> TrafficStatisticsResult { get; set; }
 
         //public DbSet<Setting> Settings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<TrafficStatisticsResult>().HasNoKey();
 
             //flutent api cho table Call
             modelBuilder.ApplyConfiguration(new CallConfiguration());

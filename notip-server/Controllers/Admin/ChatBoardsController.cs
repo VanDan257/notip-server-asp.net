@@ -55,6 +55,23 @@ namespace notip_server.Controllers.Admin
             }
         }
 
+        [HttpGet("traffic-statistics")]
+        public async Task<IActionResult> TrafficStatistics([FromQuery]TrafficStatisticsRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                var data = await _chatBoardService.TrafficStatistics(request);
+                responseAPI.Data = data;
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
         //[HttpGet("get-all-messages")]
         //public async Task<IActionResult> GetAllMessages()
         //{

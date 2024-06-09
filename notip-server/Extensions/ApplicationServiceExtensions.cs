@@ -27,6 +27,8 @@ namespace notip_server.Extensions
 
             #region middlewares
             services.AddScoped<ClientRoleMiddleware>();
+            services.AddScoped<AdminRoleMiddleware>();
+            services.AddScoped<ModeratorMiddleware>();
 
             #endregion
 
