@@ -17,5 +17,9 @@
         public string? Avatar { get; set; }
 
         public string? Gender { get; set; }
+
+        public DateTime? Created { get; set; }
+
+        public DateTime? LastLogin { get; set;}
     }
 }

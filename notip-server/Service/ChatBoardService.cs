@@ -929,6 +929,15 @@ namespace notip_server.Service
                     .FromSqlRaw("CALL GetStatisticsMessageUser({0}, {1})", request.StatisticByYear ?? 0, request.StatisticByMonth ?? 0)
                     .ToListAsync();
 
+                if(messageStatistics != null)
+                {
+                    messageStatistics = messageStatistics.OrderBy(x => x.Month).ToList();
+                    if (messageStatistics[0].Day != null)
+                    {
+                        messageStatistics = messageStatistics.OrderBy(x => x.Day).ToList();
+                    }
+                }
+
                 return messageStatistics;
             }
             catch (Exception ex)

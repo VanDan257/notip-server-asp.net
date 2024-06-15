@@ -214,7 +214,7 @@ namespace notip_server.Service
                     var friend1 = await _chatContext.Friends.FirstOrDefaultAsync(x => x.SenderCode == receiverCode && x.ReceiverCode == userSession);
                     if (friend1 != null)
                     {
-                        _chatContext.Remove(friend);
+                        _chatContext.Remove(friend1);
 
                         await _chatContext.SaveChangesAsync();
                     }

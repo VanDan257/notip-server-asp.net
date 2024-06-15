@@ -182,8 +182,8 @@ namespace notip_server.Service
             await chatContext.SaveChangesAsync();
 
             ///Truyền thông tin realtime cuộc gọi. Thông tin hubConnection của user.
-            if (!string.IsNullOrWhiteSpace(userCallTo.CurrentSession))
-                await chatHub.Clients.Client(userCallTo.CurrentSession).SendAsync("callHubListener", dailyRoomResp.url);
+            //if (!string.IsNullOrWhiteSpace(userCallTo.CurrentSession))
+            //    await chatHub.Clients.Client(userCallTo.CurrentSession).SendAsync("callHubListener", dailyRoomResp.url);
 
             return dailyRoomResp.url;
         }

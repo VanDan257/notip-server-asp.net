@@ -31,6 +31,10 @@ namespace notip_server.Data
         public DbSet<LoginUserHistory> LoginUserHistories { get; set; }
 
         public DbSet<TrafficStatisticsResult> TrafficStatisticsResult { get; set; }
+        
+        public DbSet<Shop> Shops { get; set; }
+
+        public DbSet<AttributesShop> AttributesShops { get; set; }
 
         //public DbSet<Setting> Settings { get; set; }
 

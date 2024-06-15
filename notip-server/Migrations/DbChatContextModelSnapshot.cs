@@ -125,6 +125,32 @@ namespace notip_server.Migrations
                     b.ToTable("UserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("notip_server.Models.AttributesShop", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("ShopId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopId");
+
+                    b.ToTable("AttributesShops");
+                });
+
             modelBuilder.Entity("notip_server.Models.Call", b =>
                 {
                     b.Property<int>("Id")
@@ -394,6 +420,57 @@ namespace notip_server.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
+            modelBuilder.Entity("notip_server.Models.Shop", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("Created")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Start")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Updated")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Shops");
+                });
+
+            modelBuilder.Entity("notip_server.Models.TrafficStatisticsResult", b =>
+                {
+                    b.Property<int?>("Day")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LoginCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MessageCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("int");
+
+                    b.ToTable("TrafficStatisticsResult");
+                });
+
             modelBuilder.Entity("notip_server.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -417,10 +494,11 @@ namespace notip_server.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("Created")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("CurrentSession")
-                        .HasMaxLength(500)
-                        .IsUnicode(false)
-                        .HasColumnType("varchar(500)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Dob")
                         .HasMaxLength(50)
@@ -548,6 +626,17 @@ namespace notip_server.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("notip_server.Models.AttributesShop", b =>
+                {
+                    b.HasOne("notip_server.Models.Shop", "Shop")
+                        .WithMany("Attributes")
+                        .HasForeignKey("ShopId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shop");
+                });
+
             modelBuilder.Entity("notip_server.Models.Call", b =>
                 {
                     b.HasOne("notip_server.Models.GroupCall", "GroupCall")
@@ -627,6 +716,11 @@ namespace notip_server.Migrations
             modelBuilder.Entity("notip_server.Models.GroupCall", b =>
                 {
                     b.Navigation("Calls");
+                });
+
+            modelBuilder.Entity("notip_server.Models.Shop", b =>
+                {
+                    b.Navigation("Attributes");
                 });
 
             modelBuilder.Entity("notip_server.Models.User", b =>

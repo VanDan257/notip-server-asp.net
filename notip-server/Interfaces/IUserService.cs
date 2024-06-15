@@ -16,7 +16,8 @@ namespace notip_server.Interfaces
         #region Admin
 
         Task<PagingResult<ResponseUserAdminHome>> GetAllUser(PagingRequest request);
-
+        Task<PagingResult<UserDto>> GetStaffs(PagingRequest request);
+        Task CreateStaff(CreateAdminRequest request);
         #endregion
     }
 }

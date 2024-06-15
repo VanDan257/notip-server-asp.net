@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
 using System.Runtime.ExceptionServices;
 using static notip_server.Utils.Constants;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace notip_server.Service
 {
@@ -22,13 +23,13 @@ namespace notip_server.Service
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly DbChatContext chatContext;
         private readonly IWebHostEnvironment webHostEnvironment;
-        private readonly IAwsS3Service _commonService;
-        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, IAwsS3Service commonService, IWebHostEnvironment webHostEnvironment)
+        private readonly IPasswordService _passwordService;
+        public UserService(DbChatContext chatContext, UserManager<User> userManager, IHttpContextAccessor httpContextAccessor, IPasswordService passwordService, IWebHostEnvironment webHostEnvironment)
         {
             this.chatContext = chatContext;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
-            _commonService = commonService;
+            _passwordService = passwordService;
             this.webHostEnvironment = webHostEnvironment;
         }
 
@@ -207,12 +208,13 @@ namespace notip_server.Service
                 throw new Exception("Có lỗi xảy ra!");
             }
             string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Avatar/{userCode}/");
-            FileHelper.CreateDirectory(path);
+            
             try
             {
                 if (request.Image[0].Length > 0)
                 {
                     string pathFile = path + request.Image[0].FileName;
+                    FileHelper.CreateDirectory(path);
                     if (!File.Exists(pathFile))
                     {
                         using (var stream = new FileStream(pathFile, FileMode.Create))
@@ -247,26 +249,37 @@ namespace notip_server.Service
 
         #region Admin
 
+        /// <summary>
+        /// Lấy danh sách người dùng
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
         public async Task<PagingResult<ResponseUserAdminHome>> GetAllUser(PagingRequest request)
         {
             try
             {
 
-                //var query = chatContext.Users
-                //    .AsQueryable();
-
-                var query = from user in chatContext.Users
-                            join userRole in chatContext.UserRoles
-                            on user.Id equals userRole.UserId
-                            join role in chatContext.Roles
-                            on userRole.RoleId equals role.Id
-                            where role.NormalizedName == Constants.Role.CLIENT
-                            orderby user.Messages.Count
-                            select new ResponseUserAdminHome
-                            {
-                                User = user,
-                                MessageCount = user.Messages.Count
-                            };
+                var query = chatContext.Users
+                    //.Include(m => m.Messages)
+                    .OrderByDescending(u => u.Messages.Count)
+                    .Select(user => new ResponseUserAdminHome
+                    {
+                        User = new UserDto
+                        {
+                            UserName = user.UserName,
+                            Dob = user.Dob,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
+                            Address = user.Address,
+                            Avatar = user.Avatar,
+                            Gender = user.Gender,
+                            Created = user.Created,
+                            LastLogin = user.LastLogin
+                        },
+                        MessageCount = chatContext.Messages.Count(message => message.CreatedBy == user.Id)
+                    })
+                    .AsQueryable();
 
                 int total = await query.CountAsync();
 
@@ -288,6 +301,127 @@ namespace notip_server.Service
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách admin
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<PagingResult<UserDto>> GetStaffs(PagingRequest request)
+        {
+            try
+            {
+                var query = chatContext.Roles
+                    .Where(x => x.NormalizedName == Constants.Role.ADMIN)
+                    .Join(chatContext.UserRoles,
+                    role => role.Id,
+                    userRole => userRole.RoleId,
+                    (rolee, userRole) => userRole.UserId)
+                    .AsQueryable();
+
+                int total = await query.CountAsync();
+
+                if (request.PageIndex == null || request.PageIndex == 0) request.PageIndex = 1;
+                if (request.PageSize == null || request.PageSize == 0) request.PageSize = total;
+
+                int totalPages = (int)Math.Ceiling((double)total / request.PageSize.Value);
+
+                var staffIds = await query
+                    .Skip((request.PageIndex.Value - 1) * request.PageSize.Value)
+                    .Take(request.PageSize.Value)
+                    .ToListAsync();
+
+                List<UserDto> usersDto = new List<UserDto>();
+
+                foreach(var staffId in staffIds)
+                {
+                    var user = await chatContext.Users.Where(x => x.Id == staffId)
+                        .Select(user => new UserDto
+                        {
+                            UserName = user.UserName,
+                            Dob = user.Dob,
+                            PhoneNumber = user.PhoneNumber,
+                            Email = user.Email,
+                            Address = user.Address,
+                            Avatar = user.Avatar,
+                            Gender = user.Gender,
+                            Created = user.Created,
+                            LastLogin = user.LastLogin
+                        })
+                        .FirstOrDefaultAsync();
+
+                    if(user != null)
+                    {
+                        usersDto.Add(user);
+                    }
+                }
+                return new PagingResult<UserDto>(usersDto, request.PageIndex.Value, request.PageSize.Value, total, totalPages);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra");
+            }
+        }
+
+        public async Task CreateStaff(CreateAdminRequest request)
+        {
+            try
+            {
+                if (await chatContext.Users.AnyAsync(x => x.Email.Equals(request.Email)))
+                    throw new Exception("Email đã tồn tại");
+
+                var saltPassword = _passwordService.GenerateSalt();
+                var hashPassword = _passwordService.HashPassword(request.Password, saltPassword);
+
+                var guid = Guid.NewGuid();
+
+                string path = Path.Combine(webHostEnvironment.ContentRootPath, $"wwwroot/Avatar/{guid}/");
+
+                User newUser = new User()
+                {
+                    Id = guid,
+                    UserName = request.UserName,
+                    Email = request.Email,
+                    PhoneNumber = request.PhoneNumber,
+                    PasswordSalt = saltPassword,
+                    PasswordHash = hashPassword,
+                    Avatar = Constants.AVATAR_DEFAULT,
+                    NormalizedEmail = request.Email.ToLower(),
+                    NormalizedUserName = request.UserName.ToLower(),
+                };
+
+                var role = await chatContext.Roles.FirstOrDefaultAsync(x => x.NormalizedName == request.Role);
+                UserRole userRole = new UserRole();
+                if (role != null)
+                {
+                    userRole.UserId = newUser.Id;
+                    userRole.RoleId = role.Id;
+                }
+
+                if (request.Avatar[0].Length > 0)
+                {
+                    string pathFile = path + request.Avatar[0].FileName;
+                    FileHelper.CreateDirectory(path);
+                    if (!File.Exists(pathFile))
+                    {
+                        using (var stream = new FileStream(pathFile, FileMode.Create))
+                        {
+                            await request.Avatar[0].CopyToAsync(stream);
+                        }
+                    }
+                    newUser.Avatar = $"Avatar/{guid}/{request.Avatar[0].FileName}";
+
+                }
+
+                await chatContext.AddAsync(newUser);
+                await chatContext.AddAsync(userRole);
+                await chatContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Có lỗi xảy ra!");
+            }
+        }
         #endregion
     }
 }

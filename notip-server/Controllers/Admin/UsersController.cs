@@ -38,5 +38,39 @@ namespace notip_server.Controllers.Admin
                 return BadRequest(responseAPI);
             }
         }
+
+        [HttpGet("get-staffs")]
+        public async Task<IActionResult> GetStaffs([FromQuery]PagingRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+
+            try
+            {
+                var users = await _userService.GetStaffs(request);
+                responseAPI.Data = users;
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
+
+        [HttpPost("create-staff")]
+        public async Task<IActionResult> CreateStaff(CreateAdminRequest request)
+        {
+            ResponseAPI responseAPI = new ResponseAPI();
+            try
+            {
+                await _userService.CreateStaff(request);
+                return Ok(responseAPI);
+            }
+            catch (Exception ex)
+            {
+                responseAPI.Message = ex.Message;
+                return BadRequest(responseAPI);
+            }
+        }
     }
 }

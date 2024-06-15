@@ -17,9 +17,6 @@ namespace notip_server.Data.Configurations
                 .IsUnicode(false);
             builder.Property(e => e.Address).HasMaxLength(255);
             builder.Property(e => e.Avatar).IsUnicode(false);
-            builder.Property(e => e.CurrentSession)
-                .HasMaxLength(500)
-                .IsUnicode(false);
             builder.Property(e => e.Dob)
                 .HasMaxLength(50)
                 .IsUnicode(false);

@@ -1,10 +1,11 @@
-﻿using notip_server.Models;
+﻿using notip_server.Dto;
+using notip_server.Models;
 
 namespace notip_server.ViewModel.User
 {
     public class ResponseUserAdminHome
     {
-        public notip_server.Models.User User { get; set; }
+        public UserDto User { get; set; }
         public int MessageCount { get; set; }
     }
 }

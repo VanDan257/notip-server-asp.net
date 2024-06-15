@@ -66,7 +66,7 @@ namespace notip_server.Controllers
             ResponseAPI responseAPI = new ResponseAPI();
             try
             {
-                AccessToken accessToken = await _authService.Login(request);
+                AccessToken accessToken = await _authService.LoginAdmin(request);
                 responseAPI.Data = accessToken;
 
                 return Ok(responseAPI);

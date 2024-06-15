@@ -120,6 +120,7 @@ namespace notip_server.Service
 
             User newUser = new User()
             {
+                Id = Guid.NewGuid(),
                 UserName = request.UserName,
                 Email = request.Email,
                 PhoneNumber = request.Phone,
@@ -130,7 +131,16 @@ namespace notip_server.Service
                 NormalizedUserName = request.UserName.ToLower(),
             };
 
+            var role = await chatContext.Roles.FirstOrDefaultAsync(x => x.NormalizedName == Constants.Role.CLIENT);
+            UserRole userRole = new UserRole();
+            if (role != null)
+            {
+                userRole.UserId = newUser.Id;
+                userRole.RoleId = role.Id;
+            }
+
             await chatContext.Users.AddAsync(newUser);
+            await chatContext.UserRoles.AddAsync(userRole);
             await chatContext.SaveChangesAsync();
 
             await _userManager.UpdateSecurityStampAsync(newUser);
@@ -161,7 +171,7 @@ namespace notip_server.Service
 
                 string encodeToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(tokenConfirm));
 
-                string ressetPasswordUrl = $"http://localhost:4200/reset-password?email={email}&token={encodeToken}";
+                string ressetPasswordUrl = $"http://localhost:4200/lay-lai-mat-khau?email={email}&token={encodeToken}";
 
                 string htmlBodyMail = $"Hãy click vào đường dẫn sau để thiết lập lại mật khẩu: <a href=\"{ressetPasswordUrl}\">Reset password</a>";
 
@@ -221,6 +231,88 @@ namespace notip_server.Service
             {
                 throw new Exception("Có lỗi xảy ra!");
             }
+        }
+
+        /// <summary>
+        /// Đăng nhập hệ thống
+        /// </summary>
+        /// <param name="user">Thông tin tài khoản người dùng</param>
+        /// <returns>AccessToken</returns>
+        public async Task<AccessToken> LoginAdmin(LoginRequest request)
+        {
+            // 1. Validate the user exists
+            if (await chatContext.Users.FirstOrDefaultAsync(x => x.Email == request.Email) is not User user)
+            {
+                throw new Exception("Email không tồn tại");
+            }
+
+            // 2. Validate the password is correct
+            if (!_passwordService.VerifyPassword(user.PasswordHash, user.PasswordSalt, request.Password))
+            {
+                user.AccessFailedCount = user.AccessFailedCount + 1;
+
+                if (user.AccessFailedCount == 3)
+                {
+                    string htmlBodyMail = "<h3>Có 1 truy cập đang cố gắng đăng nhập vào tài khoản của bạn! " +
+                        "<br>Hãy đổi mật khẩu mạnh nếu đó không phải bạn.</h3>" +
+                        "<h3>Nếu bạn quên mật khẩu, hãy lấy click vào đường link dưới đây để lấy lại mật khẩu</h3>" +
+                        "<a href=\"http://localhost:4200/quen-mat-khau\">Lấy lại mật khẩu</a>";
+                    await _sendMailService.SendEmailAsync(user.Email, "Cảnh báo đăng nhập!", htmlBodyMail);
+                }
+
+                await chatContext.SaveChangesAsync();
+                throw new Exception("Mật khẩu không chính xác.");
+            }
+
+            if (user.AccessFailedCount > 0)
+            {
+                user.AccessFailedCount = 0;
+            }
+            
+            var role = await chatContext.UserRoles.Where(u => u.UserId == user.Id)
+                .Join(chatContext.Roles,
+                    userRoles => userRoles.RoleId,
+                    roles => roles.Id,
+                    (userRoles, roles) => roles.NormalizedName)
+                .FirstOrDefaultAsync();
+            if(role != Constants.Role.ADMIN && role != Constants.Role.MODERATOR)
+            {
+                throw new Exception("Bạn không có quyền truy cập vào hệ thống");
+            }
+
+            user.LastLogin = DateTime.Now;
+
+            await chatContext.SaveChangesAsync();
+
+            var jwtTokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(EnviConfig.SecretKey);
+
+            DateTime expirationDate = DateTime.Now.Date.AddMinutes(EnviConfig.ExpirationInMinutes);
+            long expiresAt = (long)(expirationDate - new DateTime(1970, 1, 1)).TotalSeconds;
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new Claim[]
+                {
+                    new Claim(ClaimTypes.Sid, user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.Role, role),
+                    new Claim(ClaimTypes.Expiration, expiresAt.ToString())
+
+                }),
+                Expires = expirationDate,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            };
+
+            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
+
+            return new AccessToken
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Avatar = user.Avatar,
+                Token = jwtTokenHandler.WriteToken(token)
+            };
         }
     }
 }
